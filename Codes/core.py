@@ -1,7 +1,8 @@
 import heapq
 import pandas as pd
-from .driver import Driver
-from .rider import Rider
+from driver import Driver
+from rider import Rider
+from utils.readers import ExcelReader
 
 class RideSimulation:
     def __init__(self):
@@ -21,3 +22,14 @@ class RideSimulation:
         
         drivers_df = pd.read_excel(driver_path)
         riders_df = pd.read_excel(rider_path)
+
+
+if __name__ == "__main__":
+    riders_path = "data/riders.xlsx"
+    drivers_path = "data/drivers.xlsx"
+    riders = ExcelReader(riders_path)
+    drivers = ExcelReader(drivers_path)
+    riders_df = riders.read_file(sheet_name="Sheet1")
+    drivers_df = drivers.read_file(sheet_name="Sheet1")
+    print(drivers_df.head)
+    print(riders_df.head)
