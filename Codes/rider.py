@@ -1,6 +1,5 @@
 import random
 from dataclasses import dataclass
-from pandas import pd
 
 @dataclass
 class Rider:
