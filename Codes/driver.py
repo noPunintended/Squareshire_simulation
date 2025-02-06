@@ -1,4 +1,5 @@
 import random
+import numpy as np
 from dataclasses import dataclass
 
 @dataclass
@@ -20,3 +21,11 @@ class Driver:
             available_start=pd.to_datetime(row['arrival_datetime']).timestamp(),
             available_end=pd.to_datetime(row['offline_datetime']).timestamp()
         )
+    
+    def become_available():
+        corr = np.random.uniform(0, 20, 2)
+        return corr
+    
+    def travel_to_destination(dest_corr, type):
+        if type == 'pick_up':
+            
