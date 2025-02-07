@@ -1,16 +1,17 @@
 import random
 import numpy as np
 from dataclasses import dataclass
+from utils.traveling import generate_random_value
 
 @dataclass
 class Driver:
-    id: int
-    location: tuple[float, float]
-    available_start: float
-    available_end: float
-    status: str = "OFFLINE" 
-    earnings: float = 0.0
-    current_trip: object = None
+    # id: int
+    # location: tuple[float, float]
+    # available_start: float
+    # available_end: float
+    # status: str = "OFFLINE" 
+    # earnings: float = 0.0
+    # current_trip: object = None
 
     @classmethod
     def from_dataset(cls, row):
@@ -22,10 +23,18 @@ class Driver:
             available_end=pd.to_datetime(row['offline_datetime']).timestamp()
         )
     
-    def become_available():
-        corr = np.random.uniform(0, 20, 2)
+    def become_available(self, rates):
+        corr = generate_random_value(rates['map_density'], size=2)
         return corr
     
-    def travel_to_destination(dest_corr, type):
-        if type == 'pick_up':
+
+    def traveling(self):
+        if self.status == 'idling':
+            self.status == 'pick_up'
+            return None
+        
+        elif self.status == 'pick_up':
+            self.status == 'dropoff'
+            return None
+
             

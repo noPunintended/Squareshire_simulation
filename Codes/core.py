@@ -3,6 +3,7 @@ import pandas as pd
 from driver import Driver
 from rider import Rider
 from utils.readers import ExcelReader
+from utils.traveling import read_rates_config
 
 class RideSimulation:
     def __init__(self):
@@ -25,11 +26,12 @@ class RideSimulation:
 
 
 if __name__ == "__main__":
-    riders_path = "data/riders.xlsx"
-    drivers_path = "data/drivers.xlsx"
-    riders = ExcelReader(riders_path)
-    drivers = ExcelReader(drivers_path)
-    riders_df = riders.read_file(sheet_name="Sheet1")
-    drivers_df = drivers.read_file(sheet_name="Sheet1")
-    print(drivers_df.head)
-    print(riders_df.head)
+    # riders_path = "data/riders.xlsx"
+    # drivers_path = "data/drivers.xlsx"
+    # riders = ExcelReader(riders_path)
+    # drivers = ExcelReader(drivers_path)
+    # riders_df = riders.read_file(sheet_name="Sheet1")
+    # drivers_df = drivers.read_file(sheet_name="Sheet1")
+    rates = read_rates_config('configs.yaml')
+    driver = Driver()
+    print(driver.become_available(rates))

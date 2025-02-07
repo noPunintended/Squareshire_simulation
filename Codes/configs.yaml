@@ -1,5 +1,5 @@
 {
-    'map_size': ['uniform', 0, 20],
+    'map_density': ['uniform', 0, 20],
     'drivers': {
         'inter_arrival': ['exponential', 180],
         'jobs_time': ['uniform', 300, 480],
