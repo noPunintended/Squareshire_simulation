@@ -24,8 +24,11 @@ class Driver:
         )
     
     def become_available(self, rates):
+        # id = time?
+        
+        time = generate_random_value(rates['drivers']['inter_arrival'])
         corr = generate_random_value(rates['map_density'], size=2)
-        return corr
+        return time, corr
     
 
     def traveling(self):

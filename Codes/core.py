@@ -1,5 +1,6 @@
 import heapq
 import pandas as pd
+import numpy as np
 from driver import Driver
 from rider import Rider
 from utils.readers import ExcelReader
@@ -33,5 +34,16 @@ if __name__ == "__main__":
     # riders_df = riders.read_file(sheet_name="Sheet1")
     # drivers_df = drivers.read_file(sheet_name="Sheet1")
     rates = read_rates_config('configs.yaml')
+    np.random.seed(42)
     driver = Driver()
-    print(driver.become_available(rates))
+    rider = Rider()
+    driver_list = []
+    first_driver = driver.become_available(rates)
+    first_customer = rider.waiting_pick_up(rates)
+    first_customer_dest = rider.create_destination(rates)
+    t_now = 0
+    termination = 60
+
+    print(first_driver)
+    print(first_customer)
+    print(first_customer_dest)
