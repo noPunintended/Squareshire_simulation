@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import pandas as pd
 from dataclasses import dataclass
 from utils.traveling import generate_random_value
 
@@ -33,7 +34,7 @@ class Driver:
 
     def traveling(self):
         if self.status == 'idling':
-            self.status == 'pick_up'
+            self.status = 'pick_up'
             return None
         # potential logical error ? "==" instead of "=" ? 
         #im assuming the usage of == here means we are comparing the status, but shouldnt we make it 
@@ -44,7 +45,7 @@ class Driver:
 
 
         elif self.status == 'pick_up':
-            self.status == 'dropoff'
+            self.status = 'dropoff'
             return None
 
             
