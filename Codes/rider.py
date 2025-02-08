@@ -4,12 +4,12 @@ from utils.traveling import generate_random_value
 
 @dataclass
 class Rider:
-    # id: int
-    # origin: tuple[float, float]
-    # destination: tuple[float, float]
-    # request_time: float
-    # patience: float = None
-    # status: str = "WAITING"  # WAITING | MATCHED | CANCELLED | COMPLETED
+    id: int
+    origin: tuple[float, float]
+    destination: tuple[float, float]
+    request_time: float
+    patience: float = None
+    status: str = "WAITING"  # WAITING | MATCHED | CANCELLED | COMPLETED
 
     @classmethod
     def from_dataset(cls, row):

@@ -19,6 +19,12 @@ def generate_random_value(dist, size=1):
     else: return np.null 
 
 
+def create_first_driver_rider(rates):
+    f_d = generate_random_value(rates['drivers']['inter_arrival'])
+    f_r = generate_random_value(rates['riders']['inter_arrival'])
+
+    return f_d, f_r
+
 def calculate_distance(origin_x, origin_y, destination_x, destination_y):
 
     return np.sqrt((origin_x - destination_x)**2 + (origin_y - destination_y)**2)
