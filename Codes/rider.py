@@ -21,7 +21,10 @@ class Rider:
             request_time=pd.to_datetime(row['request_datetime']).timestamp(),
             patience=random.expovariate(5) if pd.isna(row['pickup_datetime']) else None
         )
-    
+    #expovariate(5) seems incorrect since config states otherwise, wont this mean they would be really fast?
+    #change it to expovariate(1/300) since config specifices 300s no?
+    #can include it in config file itself and call it, but since its an expo do we really need it?
+    #potential improvement would be trying out different random generations for patience time aswell!
 
     def waiting_pick_up(self, rates):
 
@@ -33,3 +36,14 @@ class Rider:
     def create_destination(self, rates):
         
         return generate_random_value(rates['map_density'], size=2)
+    
+#Are we using the same method to generate start and end points for rider?
+
+#insert transistion logic here?
+#def cancel_ride(self):
+#    if self.status == "WAITING":
+#        self.status = "CANCELLED"
+
+#def complete_ride(self):
+#    if self.status == "MATCHED":
+#        self.status = "COMPLETED"

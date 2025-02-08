@@ -47,3 +47,25 @@ if __name__ == "__main__":
     print(first_driver)
     print(first_customer)
     print(first_customer_dest)
+
+#This just works for one customer but we need to now relate the driver and rider assignment logic
+#potential way to implement it 
+#def process_driver_event(self, driver):
+#    if driver.status == DriverState.IDLING:
+#        self.assign_trip(driver)
+#    elif driver.status == DriverState.PICK_UP:
+#        self.start_trip(driver)
+#    elif driver.status == DriverState.DROPOFF:
+#        self.complete_trip(driver)
+
+
+#Need a way to keep track of the model and validate -> Suggestion add logging mechanism of some sort
+#potential make a new df which logs the assignment of drivers, and status at real time
+#add a unique ID for each rider and driver, eg: driver AB111 -> Rider PUN123 Driver_status:Progress 
+# (if rider sits its in progress)
+#so we might need a new state called as transitioning state or in progress state i.e ride-in-progress
+#This seems like real time monitoring/logging ig
+# need to look more into this would potential find a way to get it by sunday 2359
+#todo: Rider-driver matching logic
+# completing or abandoning logic for rider-driver
+# loop to make this work for our required time period

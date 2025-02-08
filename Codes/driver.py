@@ -35,9 +35,27 @@ class Driver:
         if self.status == 'idling':
             self.status == 'pick_up'
             return None
-        
+        # potential logical error ? "==" instead of "=" ? 
+        #im assuming the usage of == here means we are comparing the status, but shouldnt we make it 
+        # compare of status idle, if idle we set to pickup so it would become something like 
+        #  if self.status == 'idling':
+        #   self.status = 'pick_up'
+        #   return None
+
+
         elif self.status == 'pick_up':
             self.status == 'dropoff'
             return None
 
             
+#Relating driver status to rider and using or more like assigning numbers would be better no?
+#class DriverState():
+#    OFFLINE = 0
+#    IDLING = 1
+#    PICK_UP = 2
+#    DROPOFF = 3
+
+#This might be flawed, im trying to replicate the methodology which you had used for writing code
+#@dataclass 
+#class Driver:
+#    status: DriverState = DriverState.OFFLINE
