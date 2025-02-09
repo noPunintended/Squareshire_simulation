@@ -4,6 +4,8 @@ import numpy as np
 import bisect
 from driver import Driver
 from rider import Rider
+from bisect import bisect_right
+from typing import Callable, List, Dict, Any
 from utils.readers import ExcelReader
 from utils.traveling import read_rates_config, create_first_driver_rider
 
@@ -25,6 +27,14 @@ class RideSimulation:
         
         drivers_df = pd.read_excel(driver_path)
         riders_df = pd.read_excel(rider_path)
+
+
+def add_event(event_calendar, event_time:float, event_type: str, event_data: Any = None):
+    event = {'time': event_time, 'type': event_type, 'data': event_data}
+    index = bisect_right([e['time'] for e in event_calendar], event_time)
+    event_calendar.insert(index, event)
+
+    return event_calendar
 
 
 def new_drivers(id, time, ec):
