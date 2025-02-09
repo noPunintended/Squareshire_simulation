@@ -28,10 +28,20 @@ class Driver:
     def become_available(self, rates):
         # id = time?
         #suggestion string + time + location (the possibility of ID clashing reduces a really low number)
+
+
         #another suggestion would be to generate alot of drivers and Riders before we start our code 
         #what i mean is that we find a max(no of rider and drivers) and just generate them at the start
         #Later we are just randomly dumping them on the map i.e we run the simulations
         #The ids are predefined which will allow updating and tracking the more convinent
+        #Adding or pregenerating would require us to calculate arrival times at the start, would increase 
+        #simulation time, and memory consumption, the benefit is that we dont need to worry about clashes
+        #use something like this for pre-generation
+        #drivers = [Driver(id=f"DRV-{i:04d}") for i in range(10000)] #we can dump this in config file
+        #later after each iteration we call this in our core file
+        #we use hybrid sort of activation, we dont need to actively track drivers who are inactive
+        #nor track riders who are done, we just append it in a different df.
+
         time = generate_random_value(rates['drivers']['inter_arrival'])
         corr = generate_random_value(rates['map_density'], size=2)
         jobs_time = generate_random_value(rates['drivers']['jobs_time'])
