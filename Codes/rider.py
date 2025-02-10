@@ -1,15 +1,19 @@
 import random
+import numpy as np
 from dataclasses import dataclass
 from utils.traveling import generate_random_value
 
+
 @dataclass
 class Rider:
+
     id: int
+    current_location: tuple[float, float]
     origin: tuple[float, float]
     destination: tuple[float, float]
-    request_time: float
-    patience: float = None
-    status: str = "WAITING"  # WAITING | MATCHED | CANCELLED | COMPLETED
+    become_available: float = np.inf
+    patience_time: float = np.inf
+    status: str = "OFFLINE"
 
     @classmethod
     def from_dataset(cls, row):
@@ -19,12 +23,13 @@ class Rider:
             origin=eval(row['pickup_location']),
             destination=eval(row['dropoff_location']),
             request_time=pd.to_datetime(row['request_datetime']).timestamp(),
-            patience=random.expovariate(5) if pd.isna(row['pickup_datetime']) else None
+            patience=random.expovariate(5) if pd.isna(
+                row['pickup_datetime']) else None
         )
-    #expovariate(5) seems incorrect since config states otherwise, wont this mean they would be really fast?
-    #change it to expovariate(1/300) since config specifices 300s no?
-    #can include it in config file itself and call it, but since its an expo do we really need it?
-    #potential improvement would be trying out different random generations for patience time aswell!
+    # expovariate(5) seems incorrect since config states otherwise, wont this mean they would be really fast?
+    # change it to expovariate(1/300) since config specifices 300s no?
+    # can include it in config file itself and call it, but since its an expo do we really need it?
+    # potential improvement would be trying out different random generations for patience time aswell!
 
     def waiting_pick_up(self, rates):
 
@@ -32,18 +37,30 @@ class Rider:
         corr = generate_random_value(rates['map_density'], size=2)
         return time, corr
 
-
     def create_destination(self, rates):
-        
-        return generate_random_value(rates['map_density'], size=2)
-    
-#Are we using the same method to generate start and end points for rider?
 
-#insert transistion logic here?
-#def cancel_ride(self):
+        return generate_random_value(rates['map_density'], size=2)
+
+    def generating_rider(self, rates, time):
+
+        time = generate_random_value(rates['riders']['inter_arrival'])
+        corr = generate_random_value(rates['map_density'], size=2)
+        patience_time = generate_random_value(rates['riders']['wait_time'])
+
+        self.current_location = corr
+        self.origin = corr
+        self.patience_time = patience_time
+        self.status = 'Waiting'
+
+        return time
+
+# Are we using the same method to generate start and end points for rider?
+
+# insert transistion logic here?
+# def cancel_ride(self):
 #    if self.status == "WAITING":
 #        self.status = "CANCELLED"
 
-#def complete_ride(self):
+# def complete_ride(self):
 #    if self.status == "MATCHED":
 #        self.status = "COMPLETED"
