@@ -45,17 +45,26 @@ def calculate_fare(distance, rates):
     return rates['riders']['initial_pay_rate'] + (rates['riders']['pay_rate'] * distance)
 
 
-def find_closest_driver(drivers_list, rider_list):##Need Fixing
+def find_closest_driver(available_driver_x, available_driver_y, rider):##Need Fixing
 
-    distances = 
-    return drivers_list[np.argmin(distances)]
-
-
-def find_closest_rider((drivers_list, rider_list):##Need Fixing
-
-    distances =
+    distances = calculate_distance(rider.current_location[0], 
+                                   rider.current_location[1],
+                                   available_driver_x,
+                                   available_driver_y,
+                                   )
     
-    return riders[np.argmin(distances)]
+    return np.argmin(distances)
+
+
+def find_closest_rider(driver, available_rider_x, available_rider_y):##Need Fixing
+
+    distances = calculate_distance(driver.current_location[0], 
+                                   driver.current_location[1],
+                                   available_rider_x,
+                                   available_rider_y,
+                                   )
+    
+    return np.argmin(distances)
 
 
 def return_current_pos(origin_x, origin_y, destination_x, destination_y, actual_travel_time, departure_time, current_time):

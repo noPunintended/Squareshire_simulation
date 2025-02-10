@@ -43,16 +43,19 @@ class Rider:
 
     def generating_rider(self, rates, time):
 
-        time = generate_random_value(rates['riders']['inter_arrival'])
-        corr = generate_random_value(rates['map_density'], size=2)
+        n_time = generate_random_value(rates['riders']['inter_arrival'])
+        origin_corr = generate_random_value(rates['map_density'], size=2)
+        dest_corr = generate_random_value(rates['map_density'], size=2)
         patience_time = generate_random_value(rates['riders']['wait_time'])
 
-        self.current_location = corr
-        self.origin = corr
+        self.current_location = origin_corr
+        self.origin = origin_corr
+        self.destination = dest_corr
         self.patience_time = patience_time
         self.status = 'Waiting'
 
-        return time
+        return time + n_time
+    
 
 # Are we using the same method to generate start and end points for rider?
 
