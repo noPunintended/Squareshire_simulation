@@ -37,7 +37,25 @@ def calculate_travel(origin_x, origin_y, destination_x, destination_y, rates):
     travel_rates = generate_random_value(rates['trip']['actual_trip_bound'])
     actual_travel_time = expected_travel_time * travel_rates
 
-    return expected_travel_time, actual_travel_time, travel_rates
+    return distances, expected_travel_time, actual_travel_time, travel_rates
+
+
+def calculate_fare(distance, rates):
+    
+    return rates['riders']['initial_pay_rate'] + (rates['riders']['pay_rate'] * distance)
+
+
+def find_closest_driver(drivers_list, rider_list):##Need Fixing
+
+    distances = 
+    return drivers_list[np.argmin(distances)]
+
+
+def find_closest_rider((drivers_list, rider_list):##Need Fixing
+
+    distances =
+    
+    return riders[np.argmin(distances)]
 
 
 def return_current_pos(origin_x, origin_y, destination_x, destination_y, actual_travel_time, departure_time, current_time):

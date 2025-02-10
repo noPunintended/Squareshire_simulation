@@ -2,7 +2,7 @@ import random
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass
-from utils.traveling import generate_random_value
+from utils.traveling import generate_random_value, calculate_fare, calculate_travel
 
 
 @dataclass
@@ -53,10 +53,70 @@ class Driver:
 
         return time
 
-    def traveling(self):
-        if self.status == 'idling':
-            self.status = 'pick_up'
-            return None
+
+    def picking_up(self, rider, ec, time, rates):
+
+        distance, expected_travel_time, actual_travel_time, travel_rates = calculate_travel(
+            self.current_location[0], self.current_location[1], rider.origin[0], rider.origin[1], rates)
+        self.current_trip = {'origin': self.current_location, 
+                             'destination': rider.origin,
+                             'distance': distance,
+                             'expected_travel_time': expected_travel_time,
+                             'actual_travel_time': actual_travel_time,
+                             'travel_rates': travel_rates,
+                             'time_departure': time,
+                             'time_arrival': time + actual_travel_time},
+        self.status = 'picking_up'
+        ec = ec.add_event(ec, time + actual_travel_time, {
+            'type': 'driver', 'events': 'departing'}, {rider: rider.id})
+        return None
+
+
+    def departing(self, rider, ec, time, rates):
+        
+        self.current_location = self.current_trip['destination']
+        distance, expected_travel_time, actual_travel_time, travel_rates = calculate_travel(
+            self.current_location[0], self.current_location[1], rider.destination[0], rider.destination[1], rates)
+        self.current_trip = {
+            'origin': self.current_location,
+            'destination': rider.destination,
+            'distance': distance,
+            'expected_travel_time': expected_travel_time,
+            'actual_travel_time': actual_travel_time,
+            'travel_rates': travel_rates,
+            'time_departure': time,
+            'time_arrival': time + actual_travel_time,
+            'fare': calculate_fare(distance, rates)
+        }
+        self.status = 'departing'
+        ec = ec.add_event(ec, time + actual_travel_time, {
+            'type': 'driver', 'events': 'dropping_off'}, {rider: rider.id})
+        
+
+    def dropping_off(self, rider, ec, time):
+
+        self.current_location = self.current_trip['destination']
+        self.current_trip = {}
+        self.earnings += self.fare
+        self.status = 'dropping_off'
+        ec = ec.add_event(ec, time, {
+            'type': 'driver', 'events': 'searching_for_rider'})
+        return None
+    
+
+    def searching_for_rider(self, time):
+
+        self.status = 'searching_for_rider'
+
+        return None
+    
+
+    def stop_working(self, time):
+        
+        self.status = 'OFFLINE'
+
+        return None
+
         # potential logical error ? "==" instead of "=" ?
         # im assuming the usage of == here means we are comparing the status, but shouldnt we make it
         # compare of status idle, if idle we set to pickup so it would become something like
