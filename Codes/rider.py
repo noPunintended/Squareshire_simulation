@@ -41,7 +41,7 @@ class Rider:
 
         return generate_random_value(rates['map_density'], size=2)
 
-    def generating_rider(self, rates, time):
+    def generating_rider(self, ec, rates, time):
 
         n_time = generate_random_value(rates['riders']['inter_arrival'])
         origin_corr = generate_random_value(rates['map_density'], size=2)
@@ -53,6 +53,8 @@ class Rider:
         self.destination = dest_corr
         self.patience_time = patience_time
         self.status = 'Waiting'
+        ec.add_event(time + patience_time, {
+            'type': 'rider', 'events': 'cancel'}, {'rider': self.id})
 
         return time + n_time
     
