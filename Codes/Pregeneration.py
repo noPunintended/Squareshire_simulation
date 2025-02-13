@@ -12,6 +12,7 @@
 
 import numpy as np
 import yaml #not sure if this works or not
+from utils.traveling import read_rates_config
 simulation_duration = 86400
 
 def pregenerate_entities(config_path, simulation_duration):
