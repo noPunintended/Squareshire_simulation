@@ -128,6 +128,7 @@ if __name__ == "__main__":
             if event['type']['events'] == 'available':
                 driver, driver_id = new_drivers(driver_id, t_now, ec)
                 driver.searching_for_rider(ec, t_now)
+                print(f'driver_id: {driver.id} is just available at {t_now}')
                 
                 if len(available_rider_id) > 0:
                     rider_args = find_closest_rider(
@@ -139,17 +140,20 @@ if __name__ == "__main__":
                     available_rider_id.pop(rider_args)
                     available_rider_x.pop(rider_args)
                     available_rider_y.pop(rider_args)
+                    print(f'Matched driver {driver.id} with rider {closest_rider.id}')
 
                 else:  # Driver is idle
                     driver.status = 'IDLING'
                     available_driver_id.append(driver.id)
                     available_driver_x.append(driver.current_location[0])
                     available_driver_y.append(driver.current_location[1])
+                    print(f'driver_id: {driver.id} is idling at {t_now}')
 
                 drivers[driver.id] = driver
 
             elif event['type']['events'] == 'searching_for_rider':
 
+                print(f'driver_id: {event["data"]["driver"]} is searching for a rider at {t_now}')
                 driver = drivers[event['data']['driver']]
                 driver.searching_for_rider(ec, t_now)
                 if len(available_rider_id) > 0:
@@ -162,17 +166,20 @@ if __name__ == "__main__":
                     available_rider_id.pop(rider_args)
                     available_rider_x.pop(rider_args)
                     available_rider_y.pop(rider_args)
+                    print(f'Matched driver {driver.id} with rider {closest_rider.id}')
 
                 else:  # Driver is idle
                     driver.status = 'IDLING'
                     available_driver_id.append(driver.id)
                     available_driver_x.append(driver.current_location[0])
                     available_driver_y.append(driver.current_location[1])
+                    print(f'driver_id: {driver.id} is idling at {t_now}')
 
                 drivers[driver.id] = driver
 
             elif event['type']['events'] == 'departing':
 
+                print(f'driver_id: {event["data"]["driver"]} is departing at {t_now}')
                 driver = drivers[event['data']['driver']]
                 rider = riders[event['data']['rider']]
                 driver.departing(rider, ec, t_now, rates)
@@ -181,7 +188,7 @@ if __name__ == "__main__":
 
             elif event['type']['events'] == 'dropping_off':
 
-
+                print(f'driver_id: {event["data"]["driver"]} is dropping off at {t_now}')
                 driver = drivers[event['data']['driver']]
                 rider = riders[event['data']['rider']]
                 driver.dropping_off(rider, ec, t_now)
@@ -198,11 +205,14 @@ if __name__ == "__main__":
                     driver.stopped_working()
                     driver.status == 'offline'
                     drivers[driver.id] = driver
+                    print(f'driver_id: {event["data"]["driver"]} is going offline at {t_now}')
                 else: ## Drop off the rider and then stop working
-                    ec.add_event(driver.current_trip.time_arrival, 'driver', {'events': 'offline', 'driver': driver.id})    
+                    ec.add_event(driver.current_trip.time_arrival, 'driver', {'events': 'offline', 'driver': driver.id})   
+                    print(f'driver_id: {event["data"]["driver"]} is dropping off and then going offline at {t_now}') 
 
         elif event['type']['type'] == 'rider':
             if event['type']['events'] == 'available':
+                print(f'Rider is available at {t_now}')
                 rider, rider_id = new_riders(rider_id, t_now, ec)
                 if len(available_driver_id) > 0:
                     driver_args = find_closest_driver(
@@ -215,7 +225,9 @@ if __name__ == "__main__":
                     available_driver_y.pop(driver_args)
 
                     closest_driver.picking_up(rider, ec, t_now, rates)
+                    print(f'Matched driver {closest_driver.id} with rider {rider.id}')
                 else:
+                    print(f'Rider is waiting at {t_now}')
                     available_rider_id.append(rider.id)
                     available_rider_x.append(rider.current_location[0])
                     available_rider_y.append(rider.current_location[1])
@@ -244,4 +256,4 @@ if __name__ == "__main__":
 # need to look more into this would potential find a way to get it by sunday 2359
 # todo: Rider-driver matching logic
 # completing or abandoning logic for rider-driver
-# loop to make this work for our required time period
+# loop to make this work for our required time period   
