@@ -18,9 +18,13 @@ from utils.traveling import (read_rates_config,
 logging.basicConfig(
     filename='ride_simulation.log',
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filemode='w'  # Overwrites the log file each time the script runs
 )
 
+# Ensure the output text file is overwritten each time the script runs
+with open("ride_simulation_output.txt", "w") as log_file:
+    log_file.write("")
 
 def log_and_print(message):
     print(message)
@@ -125,6 +129,52 @@ if __name__ == "__main__":
                     available_driver_y.append(driver.current_location[1])
                     log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}')
                 drivers[driver.id] = driver
+
+            elif event['type']['events'] == 'searching_for_rider':
+
+                print(f'driver_id: {event["data"]["driver"]} is searching for a rider at {t_now}')
+                driver = drivers[event['data']['driver']]
+                driver.searching_for_rider(ec, t_now)
+                if len(available_rider_id) > 0:
+                    rider_args = find_closest_rider(
+                        driver, available_rider_x, available_rider_y)
+                    closest_rider = riders[available_rider_id[rider_args]]
+                    driver.picking_up(closest_rider, ec, t_now, rates)
+                    # Need to update the driver status
+                    # Need to update the rider status as well
+                    available_rider_id.pop(rider_args)
+                    available_rider_x.pop(rider_args)
+                    available_rider_y.pop(rider_args)
+                    log_and_print(f'Matched driver {driver.id} with rider {closest_rider.id}, rider location: {closest_rider.current_location}')
+
+                else:  # Driver is idle
+                    driver.status = 'IDLING'
+                    available_driver_id.append(driver.id)
+                    available_driver_x.append(driver.current_location[0])
+                    available_driver_y.append(driver.current_location[1])
+                    log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}')
+
+                drivers[driver.id] = driver
+
+            elif event['type']['events'] == 'departing':
+
+                driver = drivers[event['data']['driver']]
+                rider = riders[event['data']['rider']]
+                driver.departing(rider, ec, t_now, rates)
+                log_and_print(f'Driver {driver.id} and riders {rider.id} is departing at {t_now}, location: {driver.current_location} to {rider.destination}')
+                drivers[driver.id] = driver
+                riders[rider.id] = rider
+
+            elif event['type']['events'] == 'dropping_off':
+
+                driver = drivers[event['data']['driver']]
+                rider = riders[event['data']['rider']]
+                driver.dropping_off(rider, ec, t_now)
+                log_and_print(f'Driver {driver.id} is dropping off rider {rider.id} at {t_now}, location: {driver.current_location}')
+                driver.searching_for_rider(ec, t_now)
+
+                drivers[driver.id] = driver
+                riders[rider.id] = rider
 
             elif event['type']['events'] == 'offline':
                 driver = drivers[event['data']['driver']]
