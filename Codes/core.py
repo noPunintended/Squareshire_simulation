@@ -54,9 +54,8 @@ def new_drivers(id, time, ec):
                     current_trip=None)
     
     next_driver_time = driver.generating_driver(rates, time)
-    print(driver)
-    # ec.add_event(next_driver_time, {
-    #     'type': 'driver', 'events': 'available'})
+    ec.add_event(next_driver_time, {
+        'type': 'driver', 'events': 'available'})
 
     ec.add_event(driver.offline_time, {
         'type': 'driver', 'events': 'offline'}, {'driver': driver.id})
@@ -114,7 +113,7 @@ if __name__ == "__main__":
     #if simulation works we can make this into a graph or a proper viz.
 
     t_now = 0
-    termination = 60
+    termination = 120
     driver_id = 0
     rider_id = 0
 
@@ -122,14 +121,11 @@ if __name__ == "__main__":
 
     while t_now < termination:
         event = ec.pop(0)
-        print('event')
-        print(event)
         t_now = event['time']
 
         if event['type']['type'] == 'driver':
 
             if event['type']['events'] == 'available':
-                print('first_available')
                 driver, driver_id = new_drivers(driver_id, t_now, ec)
                 driver.searching_for_rider(ec, t_now)
                 
@@ -154,7 +150,6 @@ if __name__ == "__main__":
 
             elif event['type']['events'] == 'searching_for_rider':
 
-                print('searching_for_rider')
                 driver = drivers[event['data']['driver']]
                 driver.searching_for_rider(ec, t_now)
                 if len(available_rider_id) > 0:
@@ -178,7 +173,6 @@ if __name__ == "__main__":
 
             elif event['type']['events'] == 'departing':
 
-                print('departing')
                 driver = drivers[event['data']['driver']]
                 rider = riders[event['data']['rider']]
                 driver.departing(rider, ec, t_now, rates)
@@ -187,7 +181,6 @@ if __name__ == "__main__":
 
             elif event['type']['events'] == 'dropping_off':
 
-                print('dropping_off')
 
                 driver = drivers[event['data']['driver']]
                 rider = riders[event['data']['rider']]
@@ -196,24 +189,20 @@ if __name__ == "__main__":
 
                 drivers[driver.id] = driver
                 riders[rider.id] = rider
-                print(driver)
-                print(rider)
 
 
             elif event['type']['events'] == 'offline':
 
-                print('offline')
                 driver = drivers[event['data']['driver']]
                 if driver.status == 'IDLING':
                     driver.stopped_working()
                     driver.status == 'offline'
                     drivers[driver.id] = driver
                 else: ## Drop off the rider and then stop working
-                    ec.add_event(driver.current_trip.time_arrival, 'driver', {'events': 'offline', 'driver': driver.id})
+                    ec.add_event(driver.current_trip.time_arrival, 'driver', {'events': 'offline', 'driver': driver.id})    
 
         elif event['type']['type'] == 'rider':
             if event['type']['events'] == 'available':
-                print('rider available')
                 rider, rider_id = new_riders(rider_id, t_now, ec)
                 if len(available_driver_id) > 0:
                     driver_args = find_closest_driver(
@@ -233,9 +222,6 @@ if __name__ == "__main__":
                 
                 riders[rider.id] = rider
 
-    print(ec)
-    print(new_drivers(driver_id, 5, ec))
-    print(new_riders(rider_id, 6, ec))
 
 
 # This just works for one customer but we need to now relate the driver and rider assignment logic

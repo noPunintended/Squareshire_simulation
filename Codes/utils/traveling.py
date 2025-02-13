@@ -85,5 +85,3 @@ def return_current_pos(origin_x, origin_y, destination_x, destination_y, actual_
 
 ## To save in calculation origin, destination, travel_rates, depart_time, status
 rates = read_rates_config('configs.yaml')
-print(calculate_travel(1, 1, 10, 13, rates))
-print(return_current_pos(np.array([1, 2]), np.array([1, 8]), np.array([10, -9]), np.array([13, 6]), np.array([45.0, 100]), np.array([0, 0]), 10))

@@ -80,12 +80,11 @@ class Driver:
         return None
 
     def dropping_off(self, rider, ec, time):
-        print(self)
         self.current_location = self.current_trip['destination']
         self.earnings += self.current_trip['fare']
         self.current_trip = {}
         self.status = 'dropping_off'
-        rider.status = 'dropped_off'
+        rider.status = 'reached_destination'
         ec.add_event(time, {
             'type': 'driver', 'events': 'searching_for_rider'}, {'driver': self.id})
         
