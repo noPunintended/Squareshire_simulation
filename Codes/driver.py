@@ -30,12 +30,12 @@ class Driver:
     def generating_driver(self, rates, time):
         n_time = generate_random_value(rates['drivers']['inter_arrival']) #what values would it generate? Assuming size is 1
         corr = generate_random_value(rates['map_density'], size=2)
-        jobs_time = generate_random_value(rates['drivers']['jobs_time'])
+        jobs_time = generate_random_value(rates['drivers']['jobs_time']) #is this the maximum time we can work for?
 
         self.current_location = corr
         self.origin = corr
         self.offline_time = time + jobs_time
-
+    #include the total time a single driver would be generated? 
         return time + n_time
 
     def picking_up(self, rider, ec, time, rates):
@@ -91,10 +91,28 @@ class Driver:
         
         return None
 
-    def searching_for_rider(self, ec, time):
+    def searching_for_rider(self, ec, time): #we start this when driver becomes available no?
         self.status = 'searching_for_rider'
         return None
 
     def stop_working(self):
         self.status = 'OFFLINE'
+# are we considering the random distribution to include or making people go offline ? if yes where is this being done,
+#we need to consider if a driver is working then he stays online for 5 to 8hrs if and if he is going to go offline 
+#but still has a last ride we driver finishes and goes offline, basically he is available for some time
         return None
+
+    #def driver_disappear(self):
+    #    if self.status == 'departing' or self.status == 'dropping_off':
+    #       #the logic is to introduce that a driver can disappear between 5 to 8 uniform random distribution
+
+
+#order which we have in this code?
+#generate driver --> They become available for a random time (we get an idea of the time they are avaible for)
+# ---> Now once available we track or search for riders ----> We pick up riders (travel to pick up)
+# ----> Once picked up we depart ----> We travel to drop off location ----> we drop off
+# ---> After dropping of we calculate the total time we have left (available time left for this driver) and 
+# we update the revenue and other factors associated with our driver. ---> We repeat this till the available time of driver runs out
+#We now generate a new driver and repeat the steps.
+
+        
