@@ -23,12 +23,12 @@ class Driver:
             id=row['id'],
             location=eval(row['initial_location']),
             available_start=pd.to_datetime(
-                row['arrival_datetime']).timestamp(),
+                row['arrival_datetime']).timestamp(), 
             available_end=pd.to_datetime(row['offline_datetime']).timestamp()
         )
 
     def generating_driver(self, rates, time):
-        n_time = generate_random_value(rates['drivers']['inter_arrival'])
+        n_time = generate_random_value(rates['drivers']['inter_arrival']) #what values would it generate? Assuming size is 1
         corr = generate_random_value(rates['map_density'], size=2)
         jobs_time = generate_random_value(rates['drivers']['jobs_time'])
 
