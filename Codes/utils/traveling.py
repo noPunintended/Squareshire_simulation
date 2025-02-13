@@ -1,6 +1,8 @@
 import numpy as np
 import yaml
 
+#high possibility that we need to convery all the outputs to scalar or find a way to deal with them arrays
+#main issue is playing with them in pregeneration itself.
 
 def read_rates_config(filepath):
     with open(filepath, 'r') as file:
@@ -37,7 +39,8 @@ def calculate_travel(origin_x, origin_y, destination_x, destination_y, rates):
     travel_rates = generate_random_value(rates['trip']['actual_trip_bound'])
     actual_travel_time = expected_travel_time * travel_rates
 
-    return distances, expected_travel_time, actual_travel_time, travel_rates
+    return distances, expected_travel_time, actual_travel_time, travel_rates #need to fix this, gives us funny values 
+#convert to array to scalar?
 
 
 def calculate_fare(distance, rates):

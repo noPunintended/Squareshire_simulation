@@ -9,12 +9,11 @@
 #adding the information about simulation duration here itself for now
 #furthermore we know about exponential inter-arrival times, so we can just generate it aswell cant we?
 
-
+import pandas as pd
 import numpy as np
 import yaml #not sure if this works or not
 from utils.traveling import read_rates_config, generate_random_value
-simulation_duration = 86400
-
+simulation_duration = 864000
 def pregenerate_entities(config_path, simulation_duration):
     rates = read_rates_config(config_path)
     #intention behind read_rates_config is to have a function that reads from config.yaml file
@@ -24,28 +23,34 @@ def pregenerate_entities(config_path, simulation_duration):
     drivers = []
     driver_id = 0
     t = 0
-    while t < simulation_duration:
+    while t <= simulation_duration:
         drivers.append({
             'id': f"DRV-{driver_id:04d}",
             'available_time': t,
-            'location': np.random.uniform(0, 20, 2)
+            'location x': np.random.uniform(0, 20, 2),
+            'location y': np.random.uniform(0, 20, 2)
         })
         t += generate_random_value(rates['drivers']['inter_arrival'])
         driver_id += 1
-    
+  
     # Generate riders
     riders = []
     rider_id = 0
     t = 0
-    while t < simulation_duration:
+    while t <= simulation_duration:
         riders.append({
             'id': f"RDR-{rider_id:06d}",
             'request_time': t,
-            'origin': np.random.uniform(0, 20, 2)
+            'origin x': np.random.uniform(0, 20, 2),
+            'origin y': np.random.uniform(0, 20, 2)
         })
         t += generate_random_value(rates['riders']['inter_arrival'])
         rider_id += 1
     
+  
+  #  riders = generate_entities('riders', 'arriva
+  # l_rate')
+    #riders = pregenerate_entities('riders', 'arrival_rate', 'RDR')
     return drivers, riders
 
 #hopefully the output would look like 
