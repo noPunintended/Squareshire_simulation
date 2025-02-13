@@ -12,7 +12,7 @@
 
 import numpy as np
 import yaml #not sure if this works or not
-from utils.traveling import read_rates_config
+from utils.traveling import read_rates_config, generate_random_value
 simulation_duration = 86400
 
 def pregenerate_entities(config_path, simulation_duration):
@@ -30,7 +30,7 @@ def pregenerate_entities(config_path, simulation_duration):
             'available_time': t,
             'location': np.random.uniform(0, 20, 2)
         })
-        t += np.random.exponential(rates['drivers']['inter_arrival'])
+        t += generate_random_value(rates['drivers']['inter_arrival'])
         driver_id += 1
     
     # Generate riders
@@ -43,7 +43,7 @@ def pregenerate_entities(config_path, simulation_duration):
             'request_time': t,
             'origin': np.random.uniform(0, 20, 2)
         })
-        t += np.random.exponential(rates['riders']['inter_arrival'])
+        t += generate_random_value(rates['riders']['inter_arrival'])
         rider_id += 1
     
     return drivers, riders
@@ -54,3 +54,5 @@ def pregenerate_entities(config_path, simulation_duration):
 #Potential issues: The inter-arrival time is not there, instead the drivers spawn
 #at exponential rates.This implies that the time would be off in this code.
 #potential fixes if my assumption and interpretation are wrong : Well re-structure the code and the time logic
+
+simulation_entities = pregenerate_entities('configs.yaml', simulation_duration)
