@@ -110,6 +110,8 @@ if __name__ == "__main__":
     available_rider_id = []
     available_rider_x = []
     available_rider_y = []
+    #im assuming that x,y track the coordinates. 
+    #if simulation works we can make this into a graph or a proper viz.
 
     t_now = 0
     termination = 60
