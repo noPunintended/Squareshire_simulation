@@ -84,11 +84,13 @@ def process_available_driver(driver, t_now, ec, available_riders, available_driv
     driver.searching_for_rider(ec, t_now)
     log_and_print(f'Driver {driver.id} is just available at {t_now}')
     
+    # If there are available riders, match the driver with the closest rider
     if available_riders.is_not_empty():
         closest_rider = available_riders.find_closest_rider(driver)
         driver.picking_up(closest_rider, ec, t_now, rates)
         available_riders.remove_rider(closest_rider.id)
         log_and_print(f'Matched driver {driver.id} with rider {closest_rider.id}, rider location: {closest_rider.current_location}')
+    # If there are no available riders, add the driver to the available drivers pool
     else:
         driver.status = 'IDLING'
         available_drivers.add_driver(driver)
@@ -111,60 +113,82 @@ if __name__ == "__main__":
         event = ec.pop(0)
         t_now = event['time']
 
+        # Process the event
         if event['type']['type'] == 'driver':
+            # Check if the driver is available or searching for a rider
             if event['type']['events'] in ['available', 'searching_for_rider']:
-
+                # Create a new driver if available
                 if event['type']['events'] == 'available':
                     driver, driver_id = new_drivers(driver_id, t_now, ec)
                     drivers[driver.id] = driver
+                # Get existing driver if searching
                 else:   driver = drivers.get(event['data']['driver'])  # Get existing driver if searching
 
                 process_available_driver(driver, t_now, ec, available_riders, available_drivers, rates)
 
+            # If the driver is departing
             elif event['type']['events'] == 'departing':
 
+                # Get the driver and rider objects
                 driver = drivers[event['data']['driver']]
                 rider = riders[event['data']['rider']]
+                # Execute the departing method
                 driver.departing(rider, ec, t_now, rates)
                 log_and_print(f'Driver {driver.id} and riders {rider.id} is departing at {t_now}, location: {driver.current_location} to {rider.destination}')
+                # Update the driver and rider dictionaries
                 drivers[driver.id] = driver
                 riders[rider.id] = rider
 
+            # If the driver is dropping off
             elif event['type']['events'] == 'dropping_off':
 
+                # Get the driver and rider objects
                 driver = drivers[event['data']['driver']]
                 rider = riders[event['data']['rider']]
+                # Execute the dropping off method
                 driver.dropping_off(rider, ec, t_now)
                 log_and_print(f'Driver {driver.id} is dropping off rider {rider.id} at {t_now}, location: {driver.current_location}')
+                #  Search for a new rider
                 driver.searching_for_rider(ec, t_now)
 
+                # Update the driver and rider dictionaries
                 drivers[driver.id] = driver
                 riders[rider.id] = rider
 
+            # If the driver is going offline
             elif event['type']['events'] == 'offline':
                 driver = drivers[event['data']['driver']]
+                # Check if the driver is idling or dropping off
                 if driver.status == 'IDLING':
                     driver.stopped_working()
                     driver.status = 'offline'
                     log_and_print(f'Driver {event["data"]["driver"]} is going offline at {t_now}')
                 else:
+                    # If the driver is dropping off, go offline after dropping off
                     ec.add_event(driver.current_trip.time_arrival, 'driver', {'events': 'offline', 'driver': driver.id})   
                     log_and_print(f'Driver {event["data"]["driver"]} is dropping off and then going offline at {t_now}')
 
+        # If the event is a rider event
         elif event['type']['type'] == 'rider':
+            # If the rider is available
             if event['type']['events'] == 'available':
+                # Create a new rider and queue the next rider event
                 rider, rider_id = new_riders(rider_id, t_now, ec)
                 log_and_print(f'Rider {rider.id} is available at {t_now}, location: {rider.current_location}')
+
+                # If there are available drivers, match the rider with the closest driver
                 if available_drivers.is_not_empty():
                     closest_driver = available_drivers.find_closest_driver(rider)
                     closest_driver.picking_up(rider, ec, t_now, rates)
                     available_drivers.remove_driver(closest_driver.id)
                     log_and_print(f'Matched driver {closest_driver.id} with rider {rider.id}, rider location: {rider.current_location}')
+                # If there are no available drivers, add the rider to the available riders pool
                 else:
                     available_riders.add_rider(rider)
                     log_and_print(f'Rider {rider.id} is waiting at {t_now}, location: {rider.current_location}')
                 riders[rider.id] = rider
             
+            # If the rider is abandoning the ride
             elif event['type']['events'] == 'cancel':
                 rider = riders[event['data']['rider']]
                 if rider.status == 'Waiting':
