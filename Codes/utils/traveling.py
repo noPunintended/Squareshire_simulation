@@ -83,5 +83,6 @@ def return_current_pos(origin_x, origin_y, destination_x, destination_y, actual_
     current_y = origin_y + dist_y
     return current_x, current_y
 
+
 ## To save in calculation origin, destination, travel_rates, depart_time, status
 rates = read_rates_config('configs.yaml')

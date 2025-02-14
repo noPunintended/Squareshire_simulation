@@ -1,17 +1,18 @@
 import heapq
 import pandas as pd
 import numpy as np
-import bisect
 import logging
 from driver import Driver
 from rider import Rider
-from bisect import bisect_right
-from typing import Callable, List, Dict, Any
+from available_drivers import AvailableDrivers
+from available_riders import AvailableRiders
+from events_calendar import EventCalendar
 from utils.readers import ExcelReader
 from utils.traveling import (read_rates_config,
                              create_first_driver_rider,
                              find_closest_driver,
-                             find_closest_rider)
+                             find_closest_rider,
+                             calculate_distance)
 
 
 # Configure logging
@@ -33,14 +34,6 @@ def log_and_print(message):
         log_file.write(message + "\n")
 
 
-class EventCalendar(list):
-    def add_event(self, event_time: float, event_type: str, event_data: Any = None):
-        event = {'time': event_time, 'type': event_type, 'data': event_data}
-        index = bisect_right([e['time'] for e in self], event_time)
-        self.insert(index, event)
-        return self
-
-
 def first_event(rates):
 
     first_driver, first_rider = create_first_driver_rider(rates)
@@ -51,14 +44,6 @@ def first_event(rates):
         'type': 'rider', 'events': 'available'})
 
     return ec
-
-
-class EventCalendar(list):
-    def add_event(self, event_time: float, event_type: str, event_data: Any = None):
-        event = {'time': event_time, 'type': event_type, 'data': event_data}
-        index = bisect_right([e['time'] for e in self], event_time)
-        self.insert(index, event)
-        return self
 
 def new_drivers(id, time, ec):
     driver = Driver(id=f'd_{id}',
@@ -78,6 +63,7 @@ def new_drivers(id, time, ec):
     id += 1
     return driver, id
 
+
 def new_riders(id, time, ec):
     rider = Rider(id=f'r_{id}',
                   current_location=None,
@@ -92,14 +78,31 @@ def new_riders(id, time, ec):
     id += 1
     return rider, id
 
+
+def process_available_driver(driver, t_now, ec, available_riders, available_drivers, rates):
+    """Handles both 'available' and 'searching_for_rider' events for drivers."""
+    driver.searching_for_rider(ec, t_now)
+    log_and_print(f'Driver {driver.id} is just available at {t_now}')
+    
+    if available_riders.is_not_empty():
+        closest_rider = available_riders.find_closest_rider(driver)
+        driver.picking_up(closest_rider, ec, t_now, rates)
+        available_riders.remove_rider(closest_rider.id)
+        log_and_print(f'Matched driver {driver.id} with rider {closest_rider.id}, rider location: {closest_rider.current_location}')
+    else:
+        driver.status = 'IDLING'
+        available_drivers.add_driver(driver)
+        log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}')
+
+
 if __name__ == "__main__":
     rates = read_rates_config('configs.yaml')
     np.random.seed(42)
     ec = EventCalendar()
     drivers = {}
     riders = {}
-    available_driver_id, available_driver_x, available_driver_y = [], [], []
-    available_rider_id, available_rider_x, available_rider_y = [], [], []
+    available_drivers = AvailableDrivers()
+    available_riders = AvailableRiders()
     t_now, termination = 0, 120
     driver_id, rider_id = 0, 0
     ec = first_event(rates)
@@ -109,52 +112,14 @@ if __name__ == "__main__":
         t_now = event['time']
 
         if event['type']['type'] == 'driver':
-            if event['type']['events'] == 'available':
-                driver, driver_id = new_drivers(driver_id, t_now, ec)
-                driver.searching_for_rider(ec, t_now)
-                log_and_print(f'Driver {driver.id} is just available at {t_now}')
-                
-                if available_rider_id:
-                    rider_args = find_closest_rider(driver, available_rider_x, available_rider_y)
-                    closest_rider = riders[available_rider_id[rider_args]]
-                    driver.picking_up(closest_rider, ec, t_now, rates)
-                    available_rider_id.pop(rider_args)
-                    available_rider_x.pop(rider_args)
-                    available_rider_y.pop(rider_args)
-                    log_and_print(f'Matched driver {driver.id} with rider {closest_rider.id}, rider location: {closest_rider.current_location}')
-                else:
-                    driver.status = 'IDLING'
-                    available_driver_id.append(driver.id)
-                    available_driver_x.append(driver.current_location[0])
-                    available_driver_y.append(driver.current_location[1])
-                    log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}')
-                drivers[driver.id] = driver
+            if event['type']['events'] in ['available', 'searching_for_rider']:
 
-            elif event['type']['events'] == 'searching_for_rider':
+                if event['type']['events'] == 'available':
+                    driver, driver_id = new_drivers(driver_id, t_now, ec)
+                    drivers[driver.id] = driver
+                else:   driver = drivers.get(event['data']['driver'])  # Get existing driver if searching
 
-                print(f'driver_id: {event["data"]["driver"]} is searching for a rider at {t_now}')
-                driver = drivers[event['data']['driver']]
-                driver.searching_for_rider(ec, t_now)
-                if len(available_rider_id) > 0:
-                    rider_args = find_closest_rider(
-                        driver, available_rider_x, available_rider_y)
-                    closest_rider = riders[available_rider_id[rider_args]]
-                    driver.picking_up(closest_rider, ec, t_now, rates)
-                    # Need to update the driver status
-                    # Need to update the rider status as well
-                    available_rider_id.pop(rider_args)
-                    available_rider_x.pop(rider_args)
-                    available_rider_y.pop(rider_args)
-                    log_and_print(f'Matched driver {driver.id} with rider {closest_rider.id}, rider location: {closest_rider.current_location}')
-
-                else:  # Driver is idle
-                    driver.status = 'IDLING'
-                    available_driver_id.append(driver.id)
-                    available_driver_x.append(driver.current_location[0])
-                    available_driver_y.append(driver.current_location[1])
-                    log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}')
-
-                drivers[driver.id] = driver
+                process_available_driver(driver, t_now, ec, available_riders, available_drivers, rates)
 
             elif event['type']['events'] == 'departing':
 
@@ -190,18 +155,13 @@ if __name__ == "__main__":
             if event['type']['events'] == 'available':
                 rider, rider_id = new_riders(rider_id, t_now, ec)
                 log_and_print(f'Rider {rider.id} is available at {t_now}, location: {rider.current_location}')
-                if available_driver_id:
-                    driver_args = find_closest_driver(available_driver_x, available_driver_y, rider)
-                    closest_driver = drivers[available_driver_id[driver_args]]
+                if available_drivers.is_not_empty():
+                    closest_driver = available_drivers.find_closest_driver(rider)
                     closest_driver.picking_up(rider, ec, t_now, rates)
-                    available_driver_id.pop(driver_args)
-                    available_driver_x.pop(driver_args)
-                    available_driver_y.pop(driver_args)
+                    available_drivers.remove_driver(closest_driver.id)
                     log_and_print(f'Matched driver {closest_driver.id} with rider {rider.id}, rider location: {rider.current_location}')
                 else:
-                    available_rider_id.append(rider.id)
-                    available_rider_x.append(rider.current_location[0])
-                    available_rider_y.append(rider.current_location[1])
+                    available_riders.add_rider(rider)
                     log_and_print(f'Rider {rider.id} is waiting at {t_now}, location: {rider.current_location}')
                 riders[rider.id] = rider
             
