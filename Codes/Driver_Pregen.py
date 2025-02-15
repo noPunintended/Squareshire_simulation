@@ -1,19 +1,27 @@
 import numpy as np
 import pandas as pd 
 from utils.traveling import read_rates_config, generate_random_value
-import matplotlib.pyplot as plt  #For seeing how and where they spawn
-import seaborn as sns
+#import matplotlib.pyplot as plt  #For seeing how and where they spawn
+#import seaborn as sns
 
 
 def pregenerate_drivers(simulation_time, rates):
     driver_data = []
     driver_id = 0
     t = 0  # Tracks simulation time
+    Et = 0 # Tracks the time when a driver exits the simulation (Available time)
+
+
 
     while t <= simulation_time:
+
+        jobs_time = generate_random_value(rates['drivers']['jobs_time']).item()
+        Et = t + jobs_time  
+
         driver_data.append({
             'ID': f"DRV-{driver_id:06d}",
             'Arrival Time': t,
+            'Going home at': Et,
             'Location_X': np.random.uniform(0, 20),  
             'Location_Y': np.random.uniform(0, 20)
         })
@@ -29,8 +37,9 @@ def pregenerate_drivers(simulation_time, rates):
         #print(f"Generated inter-arrival time: {inter_arrival_time}, Type: {type(inter_arrival_time)}")
         #fixed it in a more elegant way, numpy array to a scalar.
         
-        
+     
         t += inter_arrival_time
+        #Et = t + jobs_time
         driver_id += 1
 
         # Prevent memory overflow
@@ -52,7 +61,7 @@ print(drivers_df.head())
 
 
 
-
+'''
 sns.set_style("whitegrid")
 
 # Convert arrival times to hours for better readability
@@ -75,3 +84,4 @@ plt.ylabel("Location")
 plt.title("Driver Spawn Locations Over Time")
 plt.legend()
 plt.show()
+'''
