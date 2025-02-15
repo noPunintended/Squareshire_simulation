@@ -4,8 +4,8 @@ from utils.traveling import read_rates_config, generate_random_value
 #import matplotlib.pyplot as plt  #For seeing how and where they spawn
 #import seaborn as sns
 
-
 def pregenerate_drivers(simulation_time, rates):
+    np.random.seed(42)
     driver_data = []
     driver_id = 0
     t = 0  # Tracks simulation time
