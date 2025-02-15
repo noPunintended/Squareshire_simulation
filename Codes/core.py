@@ -162,19 +162,16 @@ if __name__ == "__main__":
             # If the driver is going offline
             elif event['type']['events'] == 'offline':
                 driver = drivers[event['data']['driver']]
-                print(driver)
                 # Check if the driver is idling or dropping off
                 if driver.status == 'idling' or driver.going_offline:
                     driver.status = 'offline'
                     driver.going_offline = True
-                    log_and_print(f'Driver {event["data"]["driver"]} is going offline at {t_now}')
-                    log_and_print(f'Driver {event["data"]["driver"]} is dropping off and then going offline at {t_now}') 
+                    log_and_print(f'Driver {event["data"]["driver"]} is now offline at {t_now}')
                 else:
                     # If the driver is dropping off, go offline after dropping off
                     ec.add_event(driver.current_trip['time_arrival'], {'type': 'driver', 'events': 'offline'}, {'driver': driver.id})
                     driver.going_offline = True 
-                    log_and_print(f'Driver {event["data"]["driver"]} is dropping off and then going offline at {t_now}')
-                log_and_print(f'Driver {event["data"]["driver"]} is now offline at {t_now}')
+                    log_and_print(f'Driver {event["data"]["driver"]} is dropping off and then going offline at {driver.current_trip['time_arrival']}')
 
         # If the event is a rider event
         elif event['type']['type'] == 'rider':
