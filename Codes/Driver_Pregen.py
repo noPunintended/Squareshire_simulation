@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd 
 from utils.traveling import read_rates_config, generate_random_value
+import matplotlib.pyplot as plt  #For seeing how and where they spawn
+import seaborn as sns
+
 
 def pregenerate_drivers(simulation_time, rates):
     driver_data = []
@@ -16,7 +19,16 @@ def pregenerate_drivers(simulation_time, rates):
         })
         
         # Get next arrival time (extract scalar to prevent arrays)
-        inter_arrival_time = float(generate_random_value(rates['drivers']['inter_arrival']))
+        #inter_arrival_time = float(generate_random_value(rates['drivers']['inter_arrival']))
+        #inter_arrival_time = generate_random_value(rates['drivers']['inter_arrival'])
+
+        inter_arrival_time = generate_random_value(rates['drivers']['inter_arrival']).item() 
+        #fixed it in a more elegant way, numpy array to a scalar.
+
+        #For debugging
+        #print(f"Generated inter-arrival time: {inter_arrival_time}, Type: {type(inter_arrival_time)}")
+        #fixed it in a more elegant way, numpy array to a scalar.
+        
         
         t += inter_arrival_time
         driver_id += 1
@@ -37,3 +49,29 @@ drivers_df = pregenerate_drivers(simulation_time, rates)
 
 # Display first few drivers
 print(drivers_df.head())
+
+
+
+
+sns.set_style("whitegrid")
+
+# Convert arrival times to hours for better readability
+drivers_df['Arrival Hour'] = drivers_df['Arrival Time'] / 3600  # Convert seconds to hours
+
+## **1. Histogram of Driver Arrivals**
+plt.figure(figsize=(10, 5))
+sns.histplot(drivers_df['Arrival Hour'], bins=30, kde=True)
+plt.xlabel("Time (Hours)")
+plt.ylabel("Number of Drivers")
+plt.title("Distribution of Driver Arrivals Over Time")
+plt.show()
+
+## **2. Scatter Plot to see driver spawning on the map**
+plt.figure(figsize=(10, 5))
+plt.scatter(drivers_df['Arrival Hour'], drivers_df['Location_X'], s=5, alpha=0.5, label='X Coord')
+plt.scatter(drivers_df['Arrival Hour'], drivers_df['Location_Y'], s=5, alpha=0.5, label='Y Coord', color='red')
+plt.xlabel("Time (Hours)")
+plt.ylabel("Location")
+plt.title("Driver Spawn Locations Over Time")
+plt.legend()
+plt.show()
