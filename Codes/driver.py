@@ -15,6 +15,7 @@ class Driver:
     status: str = "OFFLINE"
     earnings: float = 0.0
     current_trip: dict = None
+    going_offline: bool = False
 
     @classmethod
     def from_dataset(cls, row):

@@ -95,6 +95,7 @@ def process_available_driver(driver, t_now, ec, available_riders, available_driv
         driver.status = 'idling'
         available_drivers.add_driver(driver)
         log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}')
+    drivers[driver.id] = driver
 
 
 if __name__ == "__main__":
@@ -105,7 +106,7 @@ if __name__ == "__main__":
     riders = {}
     available_drivers = AvailableDrivers()
     available_riders = AvailableRiders()
-    t_now, termination = 0, 120
+    t_now, termination = 0, 600
     driver_id, rider_id = 0, 0
     ec = first_event(rates)
 
@@ -114,6 +115,7 @@ if __name__ == "__main__":
         t_now = event['time']
 
         # Process the event
+        print(event)
         if event['type']['type'] == 'driver':
             # Check if the driver is available or searching for a rider
             if event['type']['events'] in ['available', 'searching_for_rider']:
@@ -158,14 +160,17 @@ if __name__ == "__main__":
             # If the driver is going offline
             elif event['type']['events'] == 'offline':
                 driver = drivers[event['data']['driver']]
+                print(driver)
                 # Check if the driver is idling or dropping off
-                if driver.status == 'idling':
-                    driver.stopped_working()
+                if driver.status == 'idling' or driver.going_offline:
+                    driver.going_offline = True
                     driver.status = 'offline'
                     log_and_print(f'Driver {event["data"]["driver"]} is going offline at {t_now}')
                 else:
                     # If the driver is dropping off, go offline after dropping off
-                    ec.add_event(driver.current_trip.time_arrival, 'driver', {'events': 'offline', 'driver': driver.id})   
+                    print(driver.current_trip)
+                    driver.going_offline = True
+                    ec.add_event(driver.current_trip['time_arrival'], {'type': 'driver', 'events': 'offline'}, {'driver': driver.id})   
                     log_and_print(f'Driver {event["data"]["driver"]} is dropping off and then going offline at {t_now}')
 
         # If the event is a rider event
