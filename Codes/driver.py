@@ -86,8 +86,9 @@ class Driver:
         self.current_trip = {}
         self.status = 'dropping_off'
         rider.status = 'reached_destination'
-        ec.add_event(time, {
-            'type': 'driver', 'events': 'searching_for_rider'}, {'driver': self.id})
+        if not self.going_offline:
+            ec.add_event(time, {
+                'type': 'driver', 'events': 'searching_for_rider'}, {'driver': self.id})
         
         return None
 
