@@ -2,6 +2,7 @@ import heapq
 import pandas as pd
 import numpy as np
 import logging
+import pickle
 from driver import Driver
 from rider import Rider
 from available_drivers import AvailableDrivers
@@ -32,6 +33,17 @@ def log_and_print(message):
     logging.info(message)
     with open("ride_simulation_output.txt", "a") as log_file:
         log_file.write(message + "\n")
+
+
+def final_output(drivers, riders):
+
+    # Convert to DataFrame
+    drivers_df = pd.DataFrame.from_dict({k: vars(v) for k, v in drivers.items()}, orient='index')
+    riders_df = pd.DataFrame.from_dict({k: vars(v) for k, v in riders.items()}, orient='index')
+
+    # Save as pickle
+    drivers_df.to_pickle("drivers.pkl")
+    riders_df.to_pickle("riders.pkl")
 
 
 def first_event(rates):
@@ -149,7 +161,7 @@ if __name__ == "__main__":
                 driver = drivers[event['data']['driver']]
                 rider = riders[event['data']['rider']]
                 # Execute the dropping off method
-                driver.dropping_off(rider, ec, t_now)
+                driver.dropping_off(rider, ec, t_now, rates)
                 log_and_print(f'Driver {driver.id} is dropping off rider {rider.id} at {t_now}, location: {driver.current_location}')
 
                 # Update the driver and rider dictionaries
@@ -197,6 +209,9 @@ if __name__ == "__main__":
                     rider.status = 'abandoned'
                     riders[rider.id] = rider
                     log_and_print(f'Rider {rider.id} has abandoned the ride at {t_now}, location: {rider.current_location}')
+
+    print(drivers)
+    final_output(drivers, riders)
 
 
 

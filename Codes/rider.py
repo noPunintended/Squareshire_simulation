@@ -14,6 +14,7 @@ class Rider:
     become_available: float = np.inf
     patience_time: float = np.inf
     status: str = "OFFLINE"
+    driver: str = None
 
     @classmethod
     def from_dataset(cls, row):
