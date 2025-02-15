@@ -1,7 +1,7 @@
-import heapq
 import pandas as pd
 import numpy as np
 import logging
+import time
 import pickle
 from driver import Driver
 from rider import Rider
@@ -11,9 +11,7 @@ from events_calendar import EventCalendar
 from utils.readers import ExcelReader
 from utils.traveling import (read_rates_config,
                              create_first_driver_rider,
-                             find_closest_driver,
-                             find_closest_rider,
-                             calculate_distance)
+                             update_drivers_location)
 
 
 # Configure logging
@@ -50,11 +48,12 @@ def first_event(rates):
 
     first_driver, first_rider = create_first_driver_rider(rates)
     ec = EventCalendar()
+    termination = rates['simulation']['termination']
     ec.add_event(first_driver, {
         'type': 'driver', 'events': 'available'})
     ec.add_event(first_rider, {
         'type': 'rider', 'events': 'available'})
-
+    ec.add_event(termination, {'type': 'termination'})
     return ec
 
 def new_drivers(id, time, ec):
@@ -111,7 +110,20 @@ def process_available_driver(driver, t_now, ec, available_riders, available_driv
     drivers[driver.id] = driver
 
 
+def simulation_stats(start, sim_start, termination, n_events):
+    """Prints the simulation statistics."""
+    sim_time = time.time() - sim_start
+    total_time = time.time() - start
+    sim = {}
+    sim['simulation_time'] = sim_time
+    sim['total_time'] = total_time
+    sim['termination'] = termination
+    sim['n_events'] = n_events
+    pickle.dump(sim, open('simulation_stats.pkl', 'wb'))
+
+
 if __name__ == "__main__":
+    start = time.time()
     rates = read_rates_config('configs.yaml')
     np.random.seed(42)
     ec = EventCalendar()
@@ -119,12 +131,15 @@ if __name__ == "__main__":
     riders = {}
     available_drivers = AvailableDrivers()
     available_riders = AvailableRiders()
-    t_now, termination = 0, 700
+    t_now, termination = 0, rates['simulation']['termination']
     driver_id, rider_id = 0, 0
     ec = first_event(rates)
+    n_events = 0
 
     while t_now < termination:
+        start_sim = time.time()
         event = ec.pop(0)
+        n_events += 1
         t_now = event['time']
 
         # Process the event
@@ -210,30 +225,14 @@ if __name__ == "__main__":
                     riders[rider.id] = rider
                     log_and_print(f'Rider {rider.id} has abandoned the ride at {t_now}, location: {rider.current_location}')
 
-    print(drivers)
-    final_output(drivers, riders)
+        # If the event is a termination event
+        elif event['type']['type'] == 'termination':
+            update_drivers_location(drivers, riders, t_now, rates)
+            final_output(drivers, riders)
+            log_and_print(f'Simulation terminated at {t_now}')
+            termination = time.time()
+            simulation_stats(start, start_sim, termination, n_events)
+            break
 
-
-
-
-# This just works for one customer but we need to now relate the driver and rider assignment logic
-# potential way to implement it
-# def process_driver_event(self, driver):
-#    if driver.status == DriverState.idling:
-#        self.assign_trip(driver)
-#    elif driver.status == DriverState.PICK_UP:
-#        self.start_trip(driver)
-#    elif driver.status == DriverState.DROPOFF:
-#        self.complete_trip(driver)
-
-
-# Need a way to keep track of the model and validate -> Suggestion add logging mechanism of some sort
-# potential make a new df which logs the assignment of drivers, and status at real time
-# add a unique ID for each rider and driver, eg: driver AB111 -> Rider PUN123 Driver_status:Progress
-# (if rider sits its in progress)
-# so we might need a new state called as transitioning state or in progress state i.e ride-in-progress
-# This seems like real time monitoring/logging ig
-# need to look more into this would potential find a way to get it by sunday 2359
-# todo: Rider-driver matching logic
-# completing or abandoning logic for rider-driver
-# loop to make this work for our required time period   
+        else:
+            log_and_print(f'Unknown event: {event}')

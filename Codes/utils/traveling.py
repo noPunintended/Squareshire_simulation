@@ -77,12 +77,59 @@ def return_current_pos(origin_x, origin_y, destination_x, destination_y, actual_
     dist_y = (destination_y - origin_y)
     avg_speed_x = dist_x / actual_travel_time
     avg_speed_y = dist_y / actual_travel_time
-    dist_x = current_trip_time * avg_speed_x
-    dist_y = current_trip_time * avg_speed_y
-    current_x = origin_x + dist_x
-    current_y = origin_y + dist_y
-    return current_x, current_y
+    dist_x_traveled = current_trip_time * avg_speed_x
+    dist_y_traveled = current_trip_time * avg_speed_y
+    current_x = origin_x + dist_x_traveled
+    current_y = origin_y + dist_y_traveled
+    return current_x, current_y, dist_x_traveled, dist_x_traveled
 
 
-## To save in calculation origin, destination, travel_rates, depart_time, status
-rates = read_rates_config('configs.yaml')
+def update_drivers_location(drivers, riders, t_now, rates):
+    """Update the location of drivers who are currently on a trip."""
+    
+    driver_data = {
+        "ids": [],
+        "origin_x": [],
+        "origin_y": [],
+        "destination_x": [],
+        "destination_y": [],
+        "travel_time": [],
+        "departure_time": []
+    }
+
+    # Collect data for drivers who have an active trip
+    for driver_id, driver in drivers.items():
+        if driver.current_trip:
+            driver_data["ids"].append(driver_id)
+            driver_data["origin_x"].append(driver.current_trip['origin'][0])
+            driver_data["origin_y"].append(driver.current_trip['origin'][1])
+            driver_data["destination_x"].append(driver.current_trip['destination'][0])
+            driver_data["destination_y"].append(driver.current_trip['destination'][1])
+            driver_data["travel_time"].append(driver.current_trip['actual_travel_time'])
+            driver_data["departure_time"].append(driver.current_trip['time_departure'])
+
+    # Convert lists to NumPy arrays for efficient computation
+    origin_x = np.array(driver_data["origin_x"])
+    origin_y = np.array(driver_data["origin_y"])
+    destination_x = np.array(driver_data["destination_x"])
+    destination_y = np.array(driver_data["destination_y"])
+    travel_time = np.array(driver_data["travel_time"])
+    departure_time = np.array(driver_data["departure_time"])
+
+    # Compute the current positions and distances
+    current_x, current_y, dist_x, dist_y = return_current_pos(
+        origin_x, origin_y, destination_x, destination_y, travel_time, departure_time, t_now
+    )
+    
+    distances = np.sqrt(dist_x**2 + dist_y**2)
+
+    # Update each driver's location and fuel cost
+    for i, driver_id in enumerate(driver_data["ids"]):
+        driver = drivers[driver_id]
+        driver.current_location = (current_x[i], current_y[i])
+        driver.total_distance += distances[i]
+        driver.fuel_cost += distances[i] * rates['drivers']['petrol_cost']
+        riders[driver.current_trip['matched_rider']].current_location = driver.current_location
+        riders[driver.current_trip['matched_rider']].status = 'transit'
+
+    return None

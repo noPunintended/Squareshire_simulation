@@ -13,6 +13,7 @@ class Driver:
     become_available: float = np.inf
     offline_time: float = np.inf
     status: str = "OFFLINE"
+    matched_rider: str = None
     earnings: float = 0.0
     current_trip: dict = None
     going_offline: bool = False
@@ -59,7 +60,8 @@ class Driver:
             'actual_travel_time': actual_travel_time,
             'travel_rates': travel_rates,
             'time_departure': time,
-            'time_arrival': time + actual_travel_time
+            'time_arrival': time + actual_travel_time,
+            'matched_rider': rider.id
         }
         self.status = 'picking_up'
         self.past_riders.append(rider.id)
@@ -86,7 +88,8 @@ class Driver:
             'travel_rates': travel_rates,
             'time_departure': time,
             'time_arrival': time + actual_travel_time,
-            'fare': calculate_fare(distance, rates)
+            'fare': calculate_fare(distance, rates),
+            'matched_rider': rider.id
         }
         self.status = 'departing'
         rider.status = 'riding'
