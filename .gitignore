@@ -171,3 +171,6 @@ cython_debug/
 .pypirc
 Codes/ride_simulation_output.txt
 Codes/ride_simulation_output.txt
+Codes/drivers.pkl
+Codes/ride_simulation_output.txt
+.gitignore
