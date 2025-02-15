@@ -51,7 +51,7 @@ def new_drivers(id, time, ec):
                     origin=None,
                     become_available=time,
                     offline_time=np.inf,
-                    status='IDLING',
+                    status='idling',
                     earnings=0,
                     current_trip=None)
     
@@ -92,7 +92,7 @@ def process_available_driver(driver, t_now, ec, available_riders, available_driv
         log_and_print(f'Matched driver {driver.id} with rider {closest_rider.id}, rider location: {closest_rider.current_location}')
     # If there are no available riders, add the driver to the available drivers pool
     else:
-        driver.status = 'IDLING'
+        driver.status = 'idling'
         available_drivers.add_driver(driver)
         log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}')
 
@@ -159,7 +159,7 @@ if __name__ == "__main__":
             elif event['type']['events'] == 'offline':
                 driver = drivers[event['data']['driver']]
                 # Check if the driver is idling or dropping off
-                if driver.status == 'IDLING':
+                if driver.status == 'idling':
                     driver.stopped_working()
                     driver.status = 'offline'
                     log_and_print(f'Driver {event["data"]["driver"]} is going offline at {t_now}')
@@ -202,7 +202,7 @@ if __name__ == "__main__":
 # This just works for one customer but we need to now relate the driver and rider assignment logic
 # potential way to implement it
 # def process_driver_event(self, driver):
-#    if driver.status == DriverState.IDLING:
+#    if driver.status == DriverState.idling:
 #        self.assign_trip(driver)
 #    elif driver.status == DriverState.PICK_UP:
 #        self.start_trip(driver)
