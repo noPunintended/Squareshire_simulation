@@ -151,9 +151,6 @@ if __name__ == "__main__":
                 # Execute the dropping off method
                 driver.dropping_off(rider, ec, t_now)
                 log_and_print(f'Driver {driver.id} is dropping off rider {rider.id} at {t_now}, location: {driver.current_location}')
-                #  Search for a new rider
-                if not driver.going_offline:
-                    driver.searching_for_rider(ec, t_now)
 
                 # Update the driver and rider dictionaries
                 drivers[driver.id] = driver
