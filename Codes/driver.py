@@ -19,6 +19,8 @@ class Driver:
     going_offline: bool = False
     number_of_trips: int = 0
     fuel_cost: float = 0.0
+    total_pickup_distance: float = 0.0
+    total_dropoff_distance: float = 0.0
     total_distance: float = 0.0
     past_pickup: list = field(default_factory=list) 
     past_trip: list = field(default_factory=list)
@@ -74,6 +76,7 @@ class Driver:
     def departing(self, rider, ec, time, rates):
         self.current_location = self.current_trip['destination']
         self.fuel_cost += self.current_trip['distance'] * rates['drivers']['petrol_cost']
+        self.total_pickup_distance += self.current_trip['distance']
         self.total_distance += self.current_trip['distance']
         self.past_pickup.append((self.current_trip['origin'], self.current_trip['destination']))
         self.past_locations.append(self.current_location)
@@ -93,6 +96,7 @@ class Driver:
         }
         self.status = 'departing'
         rider.status = 'riding'
+        rider.pick_up_time = time
         ec.add_event(time + actual_travel_time, {
             'type': 'driver', 'events': 'dropping_off'}, {'driver': self.id, 'rider': rider.id})
         self.number_of_trips += 1
@@ -101,6 +105,7 @@ class Driver:
     def dropping_off(self, rider, ec, time, rates):
         self.current_location = self.current_trip['destination']
         self.fuel_cost += self.current_trip['distance'] * rates['drivers']['petrol_cost']
+        self.total_dropoff_distance += self.current_trip['distance']
         self.total_distance += self.current_trip['distance']
         self.past_trip.append((self.current_trip['origin'], self.current_trip['destination']))
         self.past_locations.append(self.current_location)

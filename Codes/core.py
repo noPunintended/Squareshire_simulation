@@ -223,6 +223,7 @@ if __name__ == "__main__":
                 if rider.status == 'waiting':
                     rider.status = 'abandoned'
                     riders[rider.id] = rider
+                    available_riders.remove_rider(rider.id)
                     log_and_print(f'Rider {rider.id} has abandoned the ride at {t_now}, location: {rider.current_location}')
 
         # If the event is a termination event

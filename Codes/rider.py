@@ -15,6 +15,7 @@ class Rider:
     patience_time: float = np.inf
     status: str = "OFFLINE"
     driver: str = None
+    pick_up_time: float = np.inf
     destination_time: float = np.inf
 
     @classmethod
