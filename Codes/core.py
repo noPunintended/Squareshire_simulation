@@ -82,7 +82,7 @@ def new_riders(id, time, ec):
                   destination=None,
                   become_available=time,
                   patience_time=np.inf,
-                  status='Waiting')
+                  status='waiting')
     next_driver_time = rider.generating_rider(ec, rates, time)
     ec.add_event(next_driver_time, {
         'type': 'rider', 'events': 'available'})
@@ -220,7 +220,7 @@ if __name__ == "__main__":
             # If the rider is abandoning the ride
             elif event['type']['events'] == 'cancel':
                 rider = riders[event['data']['rider']]
-                if rider.status == 'Waiting':
+                if rider.status == 'waiting':
                     rider.status = 'abandoned'
                     riders[rider.id] = rider
                     log_and_print(f'Rider {rider.id} has abandoned the ride at {t_now}, location: {rider.current_location}')

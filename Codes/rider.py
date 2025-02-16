@@ -15,6 +15,7 @@ class Rider:
     patience_time: float = np.inf
     status: str = "OFFLINE"
     driver: str = None
+    destination_time: float = np.inf
 
     @classmethod
     def from_dataset(cls, row):
@@ -53,7 +54,7 @@ class Rider:
         self.origin = origin_corr
         self.destination = dest_corr
         self.patience_time = patience_time
-        self.status = 'Waiting'
+        self.status = 'waiting'
         ec.add_event(time + patience_time, {
             'type': 'rider', 'events': 'cancel'}, {'rider': self.id})
 
@@ -64,7 +65,7 @@ class Rider:
 
 # insert transistion logic here?
 # def cancel_ride(self):
-#    if self.status == "WAITING":
+#    if self.status == "waiting":
 #        self.status = "CANCELLED"
 
 # def complete_ride(self):

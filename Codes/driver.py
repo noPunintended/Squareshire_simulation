@@ -112,6 +112,7 @@ class Driver:
         if not self.going_offline:
             ec.add_event(time, {
                 'type': 'driver', 'events': 'searching_for_rider'}, {'driver': self.id})
+        rider.destination_time = time
         
         return None
 
