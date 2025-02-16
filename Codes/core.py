@@ -16,20 +16,20 @@ from utils.traveling import (read_rates_config,
 
 # Configure logging
 logging.basicConfig(
-    filename='ride_simulation.log',
+    filename='output/ride_simulation.log',
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     filemode='w'  # Overwrites the log file each time the script runs
 )
 
 # Ensure the output text file is overwritten each time the script runs
-with open("ride_simulation_output.txt", "w") as log_file:
+with open("output/ride_simulation_output.txt", "w") as log_file:
     log_file.write("")
 
 def log_and_print(message):
     print(message)
     logging.info(message)
-    with open("ride_simulation_output.txt", "a") as log_file:
+    with open("output/ride_simulation_output.txt", "a") as log_file:
         log_file.write(message + "\n")
 
 
@@ -40,8 +40,8 @@ def final_output(drivers, riders):
     riders_df = pd.DataFrame.from_dict({k: vars(v) for k, v in riders.items()}, orient='index')
 
     # Save as pickle
-    drivers_df.to_pickle("drivers.pkl")
-    riders_df.to_pickle("riders.pkl")
+    drivers_df.to_pickle("output/drivers.pkl")
+    riders_df.to_pickle("output/riders.pkl")
 
 
 def first_event(rates):
@@ -119,7 +119,7 @@ def simulation_stats(start, sim_start, termination, n_events):
     sim['total_time'] = total_time
     sim['termination'] = termination
     sim['n_events'] = n_events
-    pickle.dump(sim, open('simulation_stats.pkl', 'wb'))
+    pickle.dump(sim, open('output/simulation_stats.pkl', 'wb'))
 
 
 if __name__ == "__main__":
