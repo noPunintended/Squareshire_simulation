@@ -152,7 +152,7 @@ if __name__ == "__main__":
                     driver, driver_id = new_drivers(driver_id, t_now, ec)
                     drivers[driver.id] = driver
                 # Get existing driver if searching
-                else:   driver = drivers.get(event['data']['driver'])  # Get existing driver if searching
+                else:   driver = drivers[event['data']['driver']]  # Get existing driver if searching
 
                 process_available_driver(driver, t_now, ec, available_riders, available_drivers, rates)
 

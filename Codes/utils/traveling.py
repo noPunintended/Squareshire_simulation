@@ -109,12 +109,12 @@ def update_drivers_location(drivers, riders, t_now, rates):
             driver_data["departure_time"].append(driver.current_trip['time_departure'])
 
     # Convert lists to NumPy arrays for efficient computation
-    origin_x = np.array(driver_data["origin_x"])
-    origin_y = np.array(driver_data["origin_y"])
-    destination_x = np.array(driver_data["destination_x"])
-    destination_y = np.array(driver_data["destination_y"])
-    travel_time = np.array(driver_data["travel_time"])
-    departure_time = np.array(driver_data["departure_time"])
+    origin_x = np.array(driver_data["origin_x"]).reshape(-1) 
+    origin_y = np.array(driver_data["origin_y"]).reshape(-1) 
+    destination_x = np.array(driver_data["destination_x"]).reshape(-1) 
+    destination_y = np.array(driver_data["destination_y"]).reshape(-1) 
+    travel_time = np.array(driver_data["travel_time"]).reshape(-1) 
+    departure_time = np.array(driver_data["departure_time"]).reshape(-1) 
 
     # Compute the current positions and distances
     current_x, current_y, dist_x, dist_y = return_current_pos(
