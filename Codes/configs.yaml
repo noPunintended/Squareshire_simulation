@@ -6,7 +6,7 @@
         'petrol_cost': 0.2
     },
     'riders': {
-        'inter_arrival': ['exponential', 2],
+        'inter_arrival': ['exponential', 0.5],
         'wait_time': ['exponential', 0.083333333333],
         'initial_pay_rate': 3,
         'pay_rate': 2
