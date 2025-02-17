@@ -183,3 +183,10 @@ Codes/ride_simulation_output.txt
 ride_simulation_output.txt
 Codes/ride_simulation_output.txt
 Codes/ride_simulation_output.txt
+Codes/output/drivers.pkl
+Codes/output/riders.pkl
+Codes/output/simulation_stats.pkl
+Codes/output/simulation_stats_10k.pkl
+Codes/output/simulation_stats_2_5k.pkl
+Codes/simulation_stats_10k.pkl
+Codes/output/simulation_stats_5k.pkl
