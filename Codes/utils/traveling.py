@@ -18,6 +18,12 @@ def generate_random_value(dist, size=1):
     elif dist[0] == 'exponential':
         return np.random.exponential(1/ dist[1], size)
     
+    elif dist[0] == 'normal':
+        return np.random.normal(dist[1], dist[2], size)
+    
+    elif dist[0] == 'beta':
+        return (np.random.beta(dist[1], dist[2], size) * (dist[4])) + dist[3]
+    
     else: return np.null 
 
 

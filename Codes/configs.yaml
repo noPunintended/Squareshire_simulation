@@ -16,6 +16,6 @@
         'actual_trip_bound': ['uniform', 0.8, 1.2]
     },
     'simulation': {
-        'termination': 10000,
+        'termination': 144000,
     }
 }
