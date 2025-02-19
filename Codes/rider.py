@@ -13,6 +13,8 @@ class Rider:
     destination: tuple[float, float]
     become_available: float = np.inf
     patience_time: float = np.inf
+    wait_till_match: float = np.inf
+    total_wait_time: float = 0.0
     status: str = "OFFLINE"
     driver: str = None
     pick_up_time: float = np.inf

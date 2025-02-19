@@ -73,6 +73,7 @@ class Driver:
         self.past_riders.append(rider.id)
         rider.status = 'matched'
         rider.driver = self.id
+        rider.wait_till_match = time - rider.become_available
         ec.add_event(time + actual_travel_time, {
             'type': 'driver', 'events': 'departing'}, {'driver': self.id, 'rider': rider.id})
         return None
@@ -103,6 +104,7 @@ class Driver:
         self.status = 'departing'
         rider.status = 'riding'
         rider.pick_up_time = time
+        rider.total_wait_time = time - rider.become_available
         ec.add_event(time + actual_travel_time, {
             'type': 'driver', 'events': 'dropping_off'}, {'driver': self.id, 'rider': rider.id})
         self.number_of_trips += 1

@@ -13,18 +13,22 @@ def read_rates_config(filepath):
 def generate_random_value(dist, size=1):
 
     if dist[0] == 'uniform':
-        return np.random.uniform(dist[1], dist[2], size)
+        vars =  np.random.uniform(dist[1], dist[2], size)
     
     elif dist[0] == 'exponential':
-        return np.random.exponential(1/ dist[1], size)
+        vars = np.random.exponential(1/ dist[1], size)
     
     elif dist[0] == 'normal':
-        return np.random.normal(dist[1], dist[2], size)
+        vars = np.random.normal(dist[1], dist[2], size)
     
     elif dist[0] == 'beta':
-        return (np.random.beta(dist[1], dist[2], size) * (dist[4])) + dist[3]
+        vars = (np.random.beta(dist[1], dist[2], size) * (dist[4])) + dist[3]
     
-    else: return np.null 
+    else: return None
+    
+    if size == 1: vars = vars[0]
+
+    return vars
 
 
 def create_first_driver_rider(rates):
