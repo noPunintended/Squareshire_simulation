@@ -17,5 +17,6 @@
     },
     'simulation': {
         'termination': 144000,
+        'name': 'default'
     }
 }

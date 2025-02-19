@@ -14,33 +14,21 @@ from utils.traveling import (read_rates_config,
                              update_drivers_location)
 
 
-# Configure logging
-logging.basicConfig(
-    filename='output/ride_simulation.log',
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    filemode='w'  # Overwrites the log file each time the script runs
-)
-
-# Ensure the output text file is overwritten each time the script runs
-with open("output/ride_simulation_output.txt", "w") as log_file:
-    log_file.write("")
-
-def log_and_print(message):
+def log_and_print(message, name):
     logging.info(message)
-    with open("output/ride_simulation_output.txt", "a") as log_file:
+    with open(f"output/{name}_ride_simulation_output.txt", "a") as log_file:
         log_file.write(message + "\n")
 
 
-def final_output(drivers, riders):
+def final_output(drivers, riders, name):
 
     # Convert to DataFrame
     drivers_df = pd.DataFrame.from_dict({k: vars(v) for k, v in drivers.items()}, orient='index')
     riders_df = pd.DataFrame.from_dict({k: vars(v) for k, v in riders.items()}, orient='index')
 
     # Save as pickle
-    drivers_df.to_pickle("output/drivers.pkl")
-    riders_df.to_pickle("output/riders.pkl")
+    drivers_df.to_pickle(f"output/{name}_drivers.pkl")
+    riders_df.to_pickle(f"output/{name}_riders.pkl")
 
 
 def first_event(rates):
@@ -92,24 +80,24 @@ def new_riders(id, time, ec):
 def process_available_driver(driver, t_now, ec, available_riders, available_drivers, rates):
     """Handles both 'available' and 'searching_for_rider' events for drivers."""
     driver.searching_for_rider(ec, t_now)
-    log_and_print(f'Driver {driver.id} is just available at {t_now} location: {driver.current_location}')
-    log_and_print(f'Driver jobs time: {driver.offline_time}')
+    log_and_print(f'Driver {driver.id} is just available at {t_now} location: {driver.current_location}', rates['simulation']['name'])
+    log_and_print(f'Driver jobs time: {driver.offline_time}', rates['simulation']['name'])
     
     # If there are available riders, match the driver with the closest rider
     if available_riders.is_not_empty():
         closest_rider = available_riders.find_closest_rider(driver)
         driver.picking_up(closest_rider, ec, t_now, rates)
         available_riders.remove_rider(closest_rider.id)
-        log_and_print(f'Matched driver {driver.id} with rider {closest_rider.id}, rider location: {closest_rider.current_location}')
+        log_and_print(f'Matched driver {driver.id} with rider {closest_rider.id}, rider location: {closest_rider.current_location}', rates['simulation']['name'])
     # If there are no available riders, add the driver to the available drivers pool
     else:
         driver.status = 'idling'
         available_drivers.add_driver(driver)
-        log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}')
+        log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}', rates['simulation']['name'])
     drivers[driver.id] = driver
 
 
-def simulation_stats(start, sim_start, termination, n_events):
+def simulation_stats(start, sim_start, termination, n_events, name):
     """Prints the simulation statistics."""
     sim_time = time.time() - sim_start
     total_time = time.time() - start
@@ -118,12 +106,22 @@ def simulation_stats(start, sim_start, termination, n_events):
     sim['total_time'] = total_time
     sim['termination'] = termination
     sim['n_events'] = n_events
-    pickle.dump(sim, open('output/simulation_stats.pkl', 'wb'))
+    pickle.dump(sim, open(f'output/{name}_simulation_stats.pkl', 'wb'))
 
 
 if __name__ == "__main__":
     start = time.time()
     rates = read_rates_config('configs.yaml')
+    # Configure logging
+    logging.basicConfig(
+        filename=f'output/{rates['simulation']['name']}_ride_simulation.log',
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        filemode='w'  # Overwrites the log file each time the script runs
+    )
+    # Ensure the output text file is overwritten each time the script runs
+    with open(f"output/{rates['simulation']['name']}_ride_simulation_output.txt", "w") as log_file:
+        log_file.write("")
     np.random.seed(42)
     ec = EventCalendar()
     drivers = {}
@@ -162,7 +160,7 @@ if __name__ == "__main__":
                 rider = riders[event['data']['rider']]
                 # Execute the departing method
                 driver.departing(rider, ec, t_now, rates)
-                log_and_print(f'Driver {driver.id} and riders {rider.id} is departing at {t_now}, location: {driver.current_location} to {rider.destination}')
+                log_and_print(f'Driver {driver.id} and riders {rider.id} is departing at {t_now}, location: {driver.current_location} to {rider.destination}', rates['simulation']['name'])
                 # Update the driver and rider dictionaries
                 drivers[driver.id] = driver
                 riders[rider.id] = rider
@@ -175,7 +173,7 @@ if __name__ == "__main__":
                 rider = riders[event['data']['rider']]
                 # Execute the dropping off method
                 driver.dropping_off(rider, ec, t_now, rates)
-                log_and_print(f'Driver {driver.id} is dropping off rider {rider.id} at {t_now}, location: {driver.current_location}')
+                log_and_print(f'Driver {driver.id} is dropping off rider {rider.id} at {t_now}, location: {driver.current_location}', rates['simulation']['name'])
 
                 # Update the driver and rider dictionaries
                 drivers[driver.id] = driver
@@ -190,13 +188,13 @@ if __name__ == "__main__":
                     driver.going_offline = True
                     driver.actual_offline_time = t_now
                     drivers[driver.id] = driver
-                    log_and_print(f'Driver {event["data"]["driver"]} is now offline at {t_now}')
+                    log_and_print(f'Driver {event["data"]["driver"]} is now offline at {t_now}', rates['simulation']['name'])
                 else:
                     # If the driver is dropping off, go offline after dropping off
                     ec.add_event(driver.current_trip['time_arrival'], {'type': 'driver', 'events': 'offline'}, {'driver': driver.id})
                     driver.going_offline = True
                     drivers[driver.id] = driver
-                    log_and_print(f'Driver {event["data"]["driver"]} is dropping off and then going offline at {driver.current_trip['time_arrival']}')
+                    log_and_print(f'Driver {event["data"]["driver"]} is dropping off and then going offline at {driver.current_trip['time_arrival']}', rates['simulation']['name'])
 
         # If the event is a rider event
         elif event['type']['type'] == 'rider':
@@ -204,18 +202,18 @@ if __name__ == "__main__":
             if event['type']['events'] == 'available':
                 # Create a new rider and queue the next rider event
                 rider, rider_id = new_riders(rider_id, t_now, ec)
-                log_and_print(f'Rider {rider.id} is available at {t_now}, location: {rider.current_location}')
+                log_and_print(f'Rider {rider.id} is available at {t_now}, location: {rider.current_location}', rates['simulation']['name'])
 
                 # If there are available drivers, match the rider with the closest driver
                 if available_drivers.is_not_empty():
                     closest_driver = available_drivers.find_closest_driver(rider)
                     closest_driver.picking_up(rider, ec, t_now, rates)
                     available_drivers.remove_driver(closest_driver.id)
-                    log_and_print(f'Matched driver {closest_driver.id} with rider {rider.id}, rider location: {rider.current_location}')
+                    log_and_print(f'Matched driver {closest_driver.id} with rider {rider.id}, rider location: {rider.current_location}', rates['simulation']['name'])
                 # If there are no available drivers, add the rider to the available riders pool
                 else:
                     available_riders.add_rider(rider)
-                    log_and_print(f'Rider {rider.id} is waiting at {t_now}, location: {rider.current_location}')
+                    log_and_print(f'Rider {rider.id} is waiting at {t_now}, location: {rider.current_location}', rates['simulation']['name'])
                 riders[rider.id] = rider
             
             # If the rider is abandoning the ride
@@ -225,16 +223,16 @@ if __name__ == "__main__":
                     rider.status = 'abandoned'
                     riders[rider.id] = rider
                     available_riders.remove_rider(rider.id)
-                    log_and_print(f'Rider {rider.id} has abandoned the ride at {t_now}, location: {rider.current_location}')
+                    log_and_print(f'Rider {rider.id} has abandoned the ride at {t_now}, location: {rider.current_location}', rates['simulation']['name'])
 
         # If the event is a termination event
         elif event['type']['type'] == 'termination':
             update_drivers_location(drivers, riders, t_now, rates)
-            final_output(drivers, riders)
-            log_and_print(f'Simulation terminated at {t_now}')
+            final_output(drivers, riders, rates['simulation']['name'])
+            log_and_print(f'Simulation terminated at {t_now}', rates['simulation']['name'])
             termination = time.time()
-            simulation_stats(start, start_sim, termination, n_events)
+            simulation_stats(start, start_sim, termination, n_events, rates['simulation']['name'])
             break
 
         else:
-            log_and_print(f'Unknown event: {event}')
+            log_and_print(f'Unknown event: {event}', rates['simulation']['name'])
