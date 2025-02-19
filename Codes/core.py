@@ -97,6 +97,26 @@ def process_available_driver(driver, t_now, ec, available_riders, available_driv
     drivers[driver.id] = driver
 
 
+def snapshot(iter, drivers, riders, t_now, rates):
+    update_drivers_location(drivers, riders, t_now, rates, mode='snapshot')
+    names = rates['simulation']['name'] + f'_snapshot_{iter}' 
+    final_output(drivers, riders, names)
+
+
+def create_snapshot(ec, rates, n_snapshot=10):
+    time_steps = np.linspace(0,  rates['simulation']['termination'], n_snapshot + 1)  
+    for snap in time_steps:
+        ec.add_event(snap, {'type': 'snapshot', 'events': snap})
+
+
+def log_values(concurrent_drivers, concurrent_riders, t_now, snap_df):
+    
+    current_time = t_now  # Capture the current timestamp
+    new_row = pd.DataFrame([{"time": current_time, "concurrent_drivers": concurrent_drivers, "concurrent_riders": concurrent_riders}])
+    snap_df = pd.concat([snap_df, new_row], ignore_index=True)
+    return snap_df
+
+
 def simulation_stats(start, sim_start, termination, n_events, name):
     """Prints the simulation statistics."""
     sim_time = time.time() - sim_start
@@ -131,7 +151,11 @@ if __name__ == "__main__":
     t_now, termination = 0, rates['simulation']['termination']
     driver_id, rider_id = 0, 0
     ec = first_event(rates)
+    create_snapshot(ec, rates, n_snapshot=rates['simulation']['n_snaps'])
     n_events = 0
+    concurrent_drivers = 0
+    concurrent_riders = 0
+    snap_df = pd.DataFrame()
 
     while t_now < termination:
         start_sim = time.time()
@@ -147,6 +171,7 @@ if __name__ == "__main__":
                 if event['type']['events'] == 'available':
                     driver, driver_id = new_drivers(driver_id, t_now, ec)
                     drivers[driver.id] = driver
+                    concurrent_drivers = concurrent_drivers + 1
                 # Get existing driver if searching
                 else:   driver = drivers[event['data']['driver']]  # Get existing driver if searching
 
@@ -173,6 +198,7 @@ if __name__ == "__main__":
                 rider = riders[event['data']['rider']]
                 # Execute the dropping off method
                 driver.dropping_off(rider, ec, t_now, rates)
+                concurrent_riders = concurrent_riders - 1
                 log_and_print(f'Driver {driver.id} is dropping off rider {rider.id} at {t_now}, location: {driver.current_location}', rates['simulation']['name'])
 
                 # Update the driver and rider dictionaries
@@ -188,6 +214,7 @@ if __name__ == "__main__":
                     driver.going_offline = True
                     driver.actual_offline_time = t_now
                     drivers[driver.id] = driver
+                    concurrent_drivers = concurrent_drivers - 1
                     log_and_print(f'Driver {event["data"]["driver"]} is now offline at {t_now}', rates['simulation']['name'])
                 else:
                     # If the driver is dropping off, go offline after dropping off
@@ -201,6 +228,7 @@ if __name__ == "__main__":
             # If the rider is available
             if event['type']['events'] == 'available':
                 # Create a new rider and queue the next rider event
+                concurrent_riders = concurrent_riders + 1
                 rider, rider_id = new_riders(rider_id, t_now, ec)
                 log_and_print(f'Rider {rider.id} is available at {t_now}, location: {rider.current_location}', rates['simulation']['name'])
 
@@ -221,18 +249,26 @@ if __name__ == "__main__":
                 rider = riders[event['data']['rider']]
                 if rider.status == 'waiting':
                     rider.status = 'abandoned'
+                    concurrent_riders = concurrent_riders - 1
                     riders[rider.id] = rider
                     available_riders.remove_rider(rider.id)
                     log_and_print(f'Rider {rider.id} has abandoned the ride at {t_now}, location: {rider.current_location}', rates['simulation']['name'])
 
-        # If the event is a termination event
+
+        elif event['type']['type'] == 'snapshot':
+            snapshot(event['type']['events'], drivers, riders, t_now, rates)
+            snap_df = log_values(concurrent_drivers, concurrent_riders, t_now, snap_df)
+
+                # If the event is a termination event
         elif event['type']['type'] == 'termination':
             update_drivers_location(drivers, riders, t_now, rates)
             final_output(drivers, riders, rates['simulation']['name'])
             log_and_print(f'Simulation terminated at {t_now}', rates['simulation']['name'])
             termination = time.time()
             simulation_stats(start, start_sim, termination, n_events, rates['simulation']['name'])
+            snap_df.to_csv("output/concurrent_data.csv", index=False)
             break
+
 
         else:
             log_and_print(f'Unknown event: {event}', rates['simulation']['name'])

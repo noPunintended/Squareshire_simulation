@@ -25,7 +25,7 @@ def generate_random_value(dist, size=1):
         vars = (np.random.beta(dist[1], dist[2], size) * (dist[4])) + dist[3]
     
     else: return None
-    
+
     if size == 1: vars = vars[0]
 
     return vars
@@ -94,7 +94,7 @@ def return_current_pos(origin_x, origin_y, destination_x, destination_y, actual_
     return current_x, current_y, dist_x_traveled, dist_x_traveled
 
 
-def update_drivers_location(drivers, riders, t_now, rates):
+def update_drivers_location(drivers, riders, t_now, rates, mode='termination'):
     """Update the location of drivers who are currently on a trip."""
     
     driver_data = {
@@ -137,9 +137,9 @@ def update_drivers_location(drivers, riders, t_now, rates):
     for i, driver_id in enumerate(driver_data["ids"]):
         driver = drivers[driver_id]
         driver.current_location = (current_x[i], current_y[i])
-        driver.total_distance += distances[i]
-        driver.fuel_cost += distances[i] * rates['drivers']['petrol_cost']
+        if mode == 'termination':
+            driver.total_distance += distances[i]
+            driver.fuel_cost += distances[i] * rates['drivers']['petrol_cost']
         riders[driver.current_trip['matched_rider']].current_location = driver.current_location
-        riders[driver.current_trip['matched_rider']].status = 'transit'
 
     return None

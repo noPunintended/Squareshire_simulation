@@ -1,5 +1,6 @@
 {
-    'map_density': ['uniform', 0, 20],
+    'map': {'density': ['uniform', 0, 20],
+        'waiting_points': []},
     'drivers': {
         'inter_arrival': ['exponential', 0.05],
         'jobs_time': ['uniform', 300, 480],
@@ -17,6 +18,7 @@
     },
     'simulation': {
         'termination': 144000,
-        'name': 'default'
+        'name': 'default',
+        'n_snaps': 10
     }
 }

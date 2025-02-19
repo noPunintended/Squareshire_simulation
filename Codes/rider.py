@@ -49,8 +49,8 @@ class Rider:
     def generating_rider(self, ec, rates, time):
 
         n_time = generate_random_value(rates['riders']['inter_arrival'])
-        origin_corr = generate_random_value(rates['map_density'], size=2)
-        dest_corr = generate_random_value(rates['map_density'], size=2)
+        origin_corr = generate_random_value(rates['map']['density'], size=2)
+        dest_corr = generate_random_value(rates['map']['density'], size=2)
         patience_time = generate_random_value(rates['riders']['wait_time'])
 
         self.current_location = origin_corr
