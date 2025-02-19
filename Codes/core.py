@@ -27,7 +27,6 @@ with open("output/ride_simulation_output.txt", "w") as log_file:
     log_file.write("")
 
 def log_and_print(message):
-    print(message)
     logging.info(message)
     with open("output/ride_simulation_output.txt", "a") as log_file:
         log_file.write(message + "\n")
@@ -143,7 +142,6 @@ if __name__ == "__main__":
         t_now = event['time']
 
         # Process the event
-        print(event)
         if event['type']['type'] == 'driver':
             # Check if the driver is available or searching for a rider
             if event['type']['events'] in ['available', 'searching_for_rider']:

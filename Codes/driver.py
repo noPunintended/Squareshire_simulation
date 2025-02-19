@@ -22,6 +22,9 @@ class Driver:
     total_pickup_distance: float = 0.0
     total_dropoff_distance: float = 0.0
     total_distance: float = 0.0
+    total_pickup_time: float = 0.0
+    total_dropoff_time: float = 0.0
+    total_time: float = 0.0
     past_pickup: list = field(default_factory=list) 
     past_trip: list = field(default_factory=list)
     past_fares: list = field(default_factory=list)
@@ -78,6 +81,8 @@ class Driver:
         self.fuel_cost += self.current_trip['distance'] * rates['drivers']['petrol_cost']
         self.total_pickup_distance += self.current_trip['distance']
         self.total_distance += self.current_trip['distance']
+        self.total_pickup_time += self.current_trip['actual_travel_time']
+        self.total_time += self.current_trip['actual_travel_time']
         self.past_pickup.append((self.current_trip['origin'], self.current_trip['destination']))
         self.past_locations.append(self.current_location)
         distance, expected_travel_time, actual_travel_time, travel_rates = calculate_travel(
@@ -107,6 +112,8 @@ class Driver:
         self.fuel_cost += self.current_trip['distance'] * rates['drivers']['petrol_cost']
         self.total_dropoff_distance += self.current_trip['distance']
         self.total_distance += self.current_trip['distance']
+        self.total_dropoff_time += self.current_trip['actual_travel_time']
+        self.total_time += self.current_trip['actual_travel_time']
         self.past_trip.append((self.current_trip['origin'], self.current_trip['destination']))
         self.past_locations.append(self.current_location)
         self.earnings += self.current_trip['fare']
