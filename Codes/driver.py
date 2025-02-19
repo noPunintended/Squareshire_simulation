@@ -12,6 +12,7 @@ class Driver:
     origin: tuple[float, float]
     become_available: float = np.inf
     offline_time: float = np.inf
+    actual_offline_time: float = np.inf
     status: str = "OFFLINE"
     matched_rider: str = None
     earnings: float = 0.0

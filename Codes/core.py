@@ -188,11 +188,14 @@ if __name__ == "__main__":
                 if driver.status == 'idling' or driver.going_offline:
                     driver.status = 'offline'
                     driver.going_offline = True
+                    driver.actual_offline_time = t_now
+                    drivers[driver.id] = driver
                     log_and_print(f'Driver {event["data"]["driver"]} is now offline at {t_now}')
                 else:
                     # If the driver is dropping off, go offline after dropping off
                     ec.add_event(driver.current_trip['time_arrival'], {'type': 'driver', 'events': 'offline'}, {'driver': driver.id})
-                    driver.going_offline = True 
+                    driver.going_offline = True
+                    drivers[driver.id] = driver
                     log_and_print(f'Driver {event["data"]["driver"]} is dropping off and then going offline at {driver.current_trip['time_arrival']}')
 
         # If the event is a rider event
