@@ -5,6 +5,7 @@ import time
 import pickle
 from driver import Driver
 from rider import Rider
+from waiting_points import Waiting_Points
 from available_drivers import AvailableDrivers
 from available_riders import AvailableRiders
 from events_calendar import EventCalendar
@@ -93,7 +94,13 @@ def process_available_driver(driver, t_now, ec, available_riders, available_driv
     else:
         driver.status = 'idling'
         available_drivers.add_driver(driver)
-        log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}', rates['simulation']['name'])
+        if rates['simulation']['waiting_points']:
+            driver.waiting_time = t_now
+            closest_wp = Waiting_Points.find_closest_waiting_point(driver.current_location)
+            if closest_wp:
+                driver.travel_to_waiting_point(ec, t_now, closest_wp, rates)
+                log_and_print(f'Driver {driver.id} is traveling to waiting point {closest_wp.name} at {t_now}, location: {closest_wp.corr}', rates['simulation']['name'])
+                log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}', rates['simulation']['name'])
     drivers[driver.id] = driver
 
 
@@ -205,10 +212,17 @@ if __name__ == "__main__":
                 drivers[driver.id] = driver
                 riders[rider.id] = rider
 
+            elif event['type']['events'] == 'idling':
+                driver = drivers[event['data']['driver']]
+                driver.idling(rates)
+
+
             # If the driver is going offline
             elif event['type']['events'] == 'offline':
                 driver = drivers[event['data']['driver']]
                 # Check if the driver is idling or dropping off
+                if driver.status == 'traveling_to_waiting_points':
+                    driver.interupting_trip(t_now, rates)
                 if driver.status == 'idling' or driver.going_offline:
                     driver.status = 'offline'
                     driver.going_offline = True
@@ -234,7 +248,8 @@ if __name__ == "__main__":
 
                 # If there are available drivers, match the rider with the closest driver
                 if available_drivers.is_not_empty():
-                    closest_driver = available_drivers.find_closest_driver(rider)
+                    update_drivers_location(drivers, riders, t_now, rates, mode='finding_drivers')
+                    closest_driver = available_drivers.find_closest_driver(rider, t_now)
                     closest_driver.picking_up(rider, ec, t_now, rates)
                     available_drivers.remove_driver(closest_driver.id)
                     log_and_print(f'Matched driver {closest_driver.id} with rider {rider.id}, rider location: {rider.current_location}', rates['simulation']['name'])

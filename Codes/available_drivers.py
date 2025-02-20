@@ -27,14 +27,28 @@ class AvailableDrivers:
         return driver_ids, driver_x, driver_y
     
 
-    def find_closest_driver(self, rider):
-        """Finds the closest driver using argmin and Euclidean distance"""
+    def find_closest_driver(self, rider, t_now, epsilon=1e-6):
+        """Finds the closest driver using Euclidean distance.
+        Breaks ties by slightly adjusting distance with (1 / waiting_time) * epsilon.
+        """
         if not self.drivers:
             return None
-        
+
         driver_ids, driver_x, driver_y = self.get_all_driver_locations()
         rider_x, rider_y = rider.current_location
 
+        # Calculate distances
         distances = calculate_distance(rider_x, rider_y, driver_x, driver_y)
-        closest_index = np.argmin(distances)  # Get index of closest driver
+
+        # Adjust distances with a very small value based on (1 / waiting_time)
+        adjusted_distances = []
+        for i, driver in enumerate(self.drivers.values()):
+            if driver.waiting_time > 0:
+                adjustment = (1 / (driver.waiting_time + 1e-9)) * epsilon  # Add a small constant
+            else:
+                adjustment = 0  # Avoid division by zero
+            adjusted_distances.append(distances[i] + adjustment)
+
+        # Find the driver with the minimum adjusted distance
+        closest_index = np.argmin(adjusted_distances)
         return self.drivers[driver_ids[closest_index]]  # Return driver object

@@ -18,7 +18,8 @@
     },
     'simulation': {
         'termination': 144000,
-        'name': 'default',
-        'n_snaps': 10
+        'name': 'waiting_points',
+        'n_snaps': 10,
+        'waiting_points': True,
     }
 }

@@ -2,7 +2,10 @@ import random
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass
-from utils.traveling import generate_random_value, calculate_fare, calculate_travel
+from utils.traveling import (generate_random_value, 
+                             calculate_fare, 
+                             calculate_travel, 
+                             return_current_pos)
 from dataclasses import dataclass, field
 
 @dataclass
@@ -14,6 +17,7 @@ class Driver:
     offline_time: float = np.inf
     actual_offline_time: float = np.inf
     status: str = "OFFLINE"
+    waiting_time: float = 0.0
     matched_rider: str = None
     earnings: float = 0.0
     current_trip: dict = None
@@ -21,8 +25,10 @@ class Driver:
     number_of_trips: int = 0
     fuel_cost: float = 0.0
     total_pickup_distance: float = 0.0
+    total_idling_distance: float = 0.0
     total_dropoff_distance: float = 0.0
     total_distance: float = 0.0
+    total_waiting_point_travel_time = 0.0
     total_pickup_time: float = 0.0
     total_dropoff_time: float = 0.0
     total_time: float = 0.0
@@ -56,6 +62,10 @@ class Driver:
         return time + n_time
 
     def picking_up(self, rider, ec, time, rates):
+        
+        ### Matched while traveling to waiting points 
+        if self.status == 'traveling_to_waiting_points':
+            self.interupting_trip(time, rates)
         distance, expected_travel_time, actual_travel_time, travel_rates = calculate_travel(
             self.current_location[0], self.current_location[1], rider.origin[0], rider.origin[1], rates)
         self.current_trip = {
@@ -71,6 +81,7 @@ class Driver:
         }
         self.status = 'picking_up'
         self.past_riders.append(rider.id)
+        self.waiting_time = 0
         rider.status = 'matched'
         rider.driver = self.id
         rider.wait_till_match = time - rider.become_available
@@ -130,6 +141,67 @@ class Driver:
         rider.destination_time = time
         
         return None
+    
+
+    def travel_to_waiting_point(self, ec, time, waiting_point, rates):
+
+        distance, expected_travel_time, actual_travel_time, travel_rates = calculate_travel(
+            self.current_location[0], self.current_location[1], waiting_point.corr[0], waiting_point.corr[1], rates)
+        self.current_trip = {
+            'origin': self.current_location, 
+            'destination':  waiting_point.corr,
+            'distance': distance,
+            'expected_travel_time': expected_travel_time,
+            'actual_travel_time': actual_travel_time,
+            'travel_rates': travel_rates,
+            'time_departure': time,
+            'time_arrival': time + actual_travel_time,
+            'waiting_point': waiting_point.name
+        }
+        self.status = 'traveling_to_waiting_points'
+        ec.add_event(time + actual_travel_time, {
+            'type': 'driver', 'events': 'idling'}, {'driver': self.id})
+
+
+    def idling(self, rates):
+        if self.status == 'traveling_to_waiting_points':
+            self.current_location = self.current_trip['destination']
+            self.fuel_cost += self.current_trip['distance'] * rates['drivers']['petrol_cost']
+            self.total_distance += self.current_trip['distance']
+            self.total_idling_distance += self.current_trip['distance']
+            self.total_waiting_point_travel_time += self.current_trip['actual_travel_time']
+            self.total_time += self.current_trip['actual_travel_time']
+            self.status = 'idling'
+            self.current_trip = {}
+
+
+    def interupting_trip(self, time, rates):
+        origin_x = self.current_trip['origin'][0]
+        origin_y = self.current_trip['origin'][1]
+        destination_x = self.current_trip['destination'][0]
+        destination_y = self.current_trip['destination'][1]
+        actual_travel_time = self.current_trip['actual_travel_time']
+        departure_time = self.current_trip['time_departure']
+        current_time = time
+        current_x, current_y, dist_x, dist_y, current_trip_time = return_current_pos(
+            origin_x,
+            origin_y,
+            destination_x,
+            destination_y,
+            actual_travel_time,
+            departure_time,
+            current_time
+        )
+    
+        distances = np.sqrt(dist_x**2 + dist_y**2)
+        self.current_location = (current_x, current_y)
+        self.fuel_cost += distances * rates['drivers']['petrol_cost']
+        self.total_distance += distances
+        self.total_idling_distance += distances
+        self.total_waiting_point_travel_time += current_trip_time
+        self.total_time += current_trip_time
+        self.status = 'idling'
+        self.current_trip = {}
 
     def searching_for_rider(self, ec, time): #we start this when driver becomes available no?
         self.status = 'searching_for_rider'
@@ -137,9 +209,6 @@ class Driver:
 
     def stop_working(self):
         self.status = 'OFFLINE'
-# are we considering the random distribution to include or making people go offline ? if yes where is this being done,
-#we need to consider if a driver is working then he stays online for 5 to 8hrs if and if he is going to go offline 
-#but still has a last ride we driver finishes and goes offline, basically he is available for some time
         return None
 
     #def driver_disappear(self):
