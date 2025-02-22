@@ -24,6 +24,8 @@ class Driver:
     going_offline: bool = False
     number_of_trips: int = 0
     fuel_cost: float = 0.0
+    start_idling: float = 0.0
+    cum_working: float = 0.0
     total_pickup_distance: float = 0.0
     total_idling_distance: float = 0.0
     total_dropoff_distance: float = 0.0
@@ -58,6 +60,7 @@ class Driver:
         self.origin = corr
         self.offline_time = time + jobs_time
         self.past_locations.append(corr)
+        self.cum_working = 0
         #include the total time a single driver would be generated? 
         return time + n_time
 
@@ -98,6 +101,7 @@ class Driver:
         self.total_time += self.current_trip['actual_travel_time']
         self.past_pickup.append((self.current_trip['origin'], self.current_trip['destination']))
         self.past_locations.append(self.current_location)
+        self.cum_working = self.cum_working + self.current_trip['actual_travel_time']
         distance, expected_travel_time, actual_travel_time, travel_rates = calculate_travel(
             self.current_location[0], self.current_location[1], rider.destination[0], rider.destination[1], rates)
         self.current_trip = {
@@ -132,6 +136,7 @@ class Driver:
         self.past_locations.append(self.current_location)
         self.earnings += self.current_trip['fare']
         self.past_fares.append(self.current_trip['fare'])
+        self.cum_working = self.cum_working + self.current_trip['actual_travel_time']
         self.current_trip = {}
         self.status = 'dropping_off'
         rider.status = 'reached_destination'
@@ -172,6 +177,7 @@ class Driver:
             self.total_waiting_point_travel_time += self.current_trip['actual_travel_time']
             self.total_time += self.current_trip['actual_travel_time']
             self.status = 'idling'
+            self.cum_working = self.cum_working + self.current_trip['actual_travel_time']
             self.current_trip = {}
 
 
@@ -201,11 +207,28 @@ class Driver:
         self.total_waiting_point_travel_time += current_trip_time
         self.total_time += current_trip_time
         self.status = 'idling'
+        self.cum_working = self.cum_working + current_trip_time
         self.current_trip = {}
 
-    def searching_for_rider(self, ec, time): #we start this when driver becomes available no?
+    def searching_for_rider(self, ec, time, rates): #we start this when driver becomes available no?
         self.status = 'searching_for_rider'
+        ## Check if need resting
+        if rates['simulation']['drivers_break']:
+            if self.cum_working >= rates['drivers_break']['jobs_time']:
+                self.taking_a_break(ec, time, rates)
+
         return None
+    
+
+    def taking_a_break(self, ec, time, rates):
+        self.status = 'taking_a_break'
+        self.cum_working = 0
+        self.start_idling = 0
+        ec.add_event(time + rates['drivers_break']['break_time'], {
+            'type': 'driver', 'events': 'searching_for_rider'}, {'driver': self.id})
+        
+        return None
+
 
     def stop_working(self):
         self.status = 'OFFLINE'

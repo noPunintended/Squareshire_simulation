@@ -80,29 +80,31 @@ def new_riders(id, time, ec):
 
 def process_available_driver(driver, t_now, ec, available_riders, available_drivers, rates):
     """Handles both 'available' and 'searching_for_rider' events for drivers."""
-    driver.searching_for_rider(ec, t_now)
+    driver.searching_for_rider(ec, t_now, rates)
     log_and_print(f'Driver {driver.id} is just available at {t_now} location: {driver.current_location}', rates['simulation']['name'])
-    log_and_print(f'Driver jobs time: {driver.offline_time}', rates['simulation']['name'])
-    
-    # If there are available riders, match the driver with the closest rider
-    if available_riders.is_not_empty():
-        closest_rider = available_riders.find_closest_rider(driver)
-        driver.picking_up(closest_rider, ec, t_now, rates)
-        available_riders.remove_rider(closest_rider.id)
-        log_and_print(f'Matched driver {driver.id} with rider {closest_rider.id}, rider location: {closest_rider.current_location}', rates['simulation']['name'])
-    # If there are no available riders, add the driver to the available drivers pool
-    else:
-        driver.status = 'idling'
-        available_drivers.add_driver(driver)
-        if rates['simulation']['waiting_points']:
-            driver.waiting_time = t_now
-            closest_wp = Waiting_Points.find_closest_waiting_point(driver.current_location)
-            if closest_wp:
-                driver.travel_to_waiting_point(ec, t_now, closest_wp, rates)
-                log_and_print(f'Driver {driver.id} is traveling to waiting point {closest_wp.name} at {t_now}, location: {closest_wp.corr}', rates['simulation']['name'])
-                log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}', rates['simulation']['name'])
-    drivers[driver.id] = driver
+    if driver.status != 'taking_a_break':
 
+        # If there are available riders, match the driver with the closest rider
+        if available_riders.is_not_empty():
+            closest_rider = available_riders.find_closest_rider(driver)
+            driver.picking_up(closest_rider, ec, t_now, rates)
+            available_riders.remove_rider(closest_rider.id)
+            log_and_print(f'Matched driver {driver.id} with rider {closest_rider.id}, rider location: {closest_rider.current_location}', rates['simulation']['name'])
+        # If there are no available riders, add the driver to the available drivers pool
+        else:
+            driver.status = 'idling'
+            driver.start_idling = t_now
+            available_drivers.add_driver(driver)
+            if rates['simulation']['waiting_points']:
+                driver.waiting_time = t_now
+                closest_wp = Waiting_Points.find_closest_waiting_point(driver.current_location)
+                if closest_wp:
+                    driver.travel_to_waiting_point(ec, t_now, closest_wp, rates)
+                    log_and_print(f'Driver {driver.id} is traveling to waiting point {closest_wp.name} at {t_now}, location: {closest_wp.corr}', rates['simulation']['name'])
+                    log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}', rates['simulation']['name'])
+        drivers[driver.id] = driver
+
+    else: log_and_print(f'Driver {driver.id} is taking a break at time {t_now}', rates['simulation']['name'])
 
 def snapshot(iter, drivers, riders, t_now, rates):
     update_drivers_location(drivers, riders, t_now, rates, mode='snapshot')
@@ -223,7 +225,7 @@ if __name__ == "__main__":
                 # Check if the driver is idling or dropping off
                 if driver.status == 'traveling_to_waiting_points':
                     driver.interupting_trip(t_now, rates)
-                if driver.status == 'idling' or driver.going_offline:
+                if driver.status == 'idling' or driver.status == 'taking_a_break' or driver.going_offline:
                     driver.status = 'offline'
                     driver.going_offline = True
                     driver.actual_offline_time = t_now
@@ -250,6 +252,8 @@ if __name__ == "__main__":
                 if available_drivers.is_not_empty():
                     update_drivers_location(drivers, riders, t_now, rates, mode='finding_drivers')
                     closest_driver = available_drivers.find_closest_driver(rider, t_now)
+                    if (t_now - closest_driver.start_idling) >= rates['drivers_break']['break_time']:
+                        closest_driver.cum_working = 0
                     closest_driver.picking_up(rider, ec, t_now, rates)
                     available_drivers.remove_driver(closest_driver.id)
                     log_and_print(f'Matched driver {closest_driver.id} with rider {rider.id}, rider location: {rider.current_location}', rates['simulation']['name'])
@@ -281,7 +285,7 @@ if __name__ == "__main__":
             log_and_print(f'Simulation terminated at {t_now}', rates['simulation']['name'])
             termination = time.time()
             simulation_stats(start, start_sim, termination, n_events, rates['simulation']['name'])
-            snap_df.to_csv("output/concurrent_data.csv", index=False)
+            snap_df.to_csv(f"output/{rates['simulation']['name']}_concurrent_data.csv", index=False)
             break
 
 
