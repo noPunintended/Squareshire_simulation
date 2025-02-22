@@ -27,14 +27,31 @@ class AvailableRiders:
     
 
     def find_closest_rider(self, driver):
-        """Finds the closest rider using argmin and Euclidean distance"""
+        """Finds the closest rider to the given driver.
+        
+        If the driver is in pre_search mode and has an active trip, the distance
+        is computed using the driver's drop-off destination as the reference point.
+        Otherwise, the Euclidean distance is computed from the driver's current location.
+        """
         if not self.riders:
             return None
 
-        rider_ids, rider_x, rider_y = self.get_all_rider_locations()
-        driver_x, driver_y = driver.current_location
+        rider_ids = list(self.riders.keys())
+        effective_distances = []
+        for rider in self.riders.values():
+            if hasattr(driver, 'pre_search') and driver.pre_search and driver.current_trip:
+                # Use the drop-off destination directly
+                effective_distance = calculate_distance(
+                    driver.current_trip['destination'][0], driver.current_trip['destination'][1],
+                    rider.current_location[0], rider.current_location[1]
+                )
+            else:
+                effective_distance = calculate_distance(
+                    driver.current_location[0], driver.current_location[1],
+                    rider.current_location[0], rider.current_location[1]
+                )
+            effective_distances.append(effective_distance)
 
-        distances = calculate_distance(driver_x, driver_y, rider_x, rider_y)
-        closest_index = np.argmin(distances)  # Get index of closest rider
-        return self.riders[rider_ids[closest_index]]  # Return rider object
+        closest_index = np.argmin(effective_distances)
+        return self.riders[rider_ids[closest_index]], effective_distances[closest_index]
     

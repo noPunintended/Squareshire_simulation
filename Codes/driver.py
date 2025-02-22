@@ -39,6 +39,8 @@ class Driver:
     past_fares: list = field(default_factory=list)
     past_riders: list = field(default_factory=list)
     past_locations: list = field(default_factory=list)
+    pre_search: bool = False
+    pre_match: bool = False
 
     @classmethod
     def from_dataset(cls, row):
@@ -85,14 +87,27 @@ class Driver:
         self.status = 'picking_up'
         self.past_riders.append(rider.id)
         self.waiting_time = 0
-        rider.status = 'matched'
+        if rider.status != 'matched':
+            rider.wait_till_match = time - rider.become_available
+            rider.status = 'matched'
+
         rider.driver = self.id
-        rider.wait_till_match = time - rider.become_available
         ec.add_event(time + actual_travel_time, {
             'type': 'driver', 'events': 'departing'}, {'driver': self.id, 'rider': rider.id})
         return None
+    
+
+    def queue_picking_up(self, rider, ec, time, rates):
+        self.pre_match = True
+        self.pre_search = False
+        rider.status = 'matched'
+        rider.wait_till_match = time - rider.become_available
+        ec.add_event(self.current_trip['time_arrival'], {
+            'type': 'driver', 'events': 'picking_up'}, {'driver': self.id, 'rider': rider.id})
+
 
     def departing(self, rider, ec, time, rates):
+        self.pre_match = False
         self.current_location = self.current_trip['destination']
         self.fuel_cost += self.current_trip['distance'] * rates['drivers']['petrol_cost']
         self.total_pickup_distance += self.current_trip['distance']
@@ -123,6 +138,19 @@ class Driver:
         ec.add_event(time + actual_travel_time, {
             'type': 'driver', 'events': 'dropping_off'}, {'driver': self.id, 'rider': rider.id})
         self.number_of_trips += 1
+
+        ## If goint to break
+        if rates['simulation']['drivers_break']:
+            if self.cum_working >= rates['drivers_break']['jobs_time']:
+                return None
+
+        offline_soon = self.offline_time < self.current_trip['time_arrival']
+        if rates['simulation']['search_while_dropping']:
+            threshold = rates['search_while_dropping']['time_to_search']
+            if (actual_travel_time  > threshold) and (not self.going_offline) and (not offline_soon):
+                ## This should be expected travel time but actual implementation would took too long
+                pre_search_time = time + actual_travel_time  - threshold
+                ec.add_event(pre_search_time, {'type': 'driver', 'events': 'pre_search'}, {'driver': self.id})
         return None
 
     def dropping_off(self, rider, ec, time, rates):
@@ -140,7 +168,7 @@ class Driver:
         self.current_trip = {}
         self.status = 'dropping_off'
         rider.status = 'reached_destination'
-        if not self.going_offline:
+        if (not self.going_offline) and (not self.pre_match):
             ec.add_event(time, {
                 'type': 'driver', 'events': 'searching_for_rider'}, {'driver': self.id})
         rider.destination_time = time
@@ -209,6 +237,7 @@ class Driver:
         self.status = 'idling'
         self.cum_working = self.cum_working + current_trip_time
         self.current_trip = {}
+
 
     def searching_for_rider(self, ec, time, rates): #we start this when driver becomes available no?
         self.status = 'searching_for_rider'

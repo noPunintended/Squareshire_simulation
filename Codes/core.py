@@ -82,14 +82,31 @@ def process_available_driver(driver, t_now, ec, available_riders, available_driv
     """Handles both 'available' and 'searching_for_rider' events for drivers."""
     driver.searching_for_rider(ec, t_now, rates)
     log_and_print(f'Driver {driver.id} is just available at {t_now} location: {driver.current_location}', rates['simulation']['name'])
+    if driver.pre_search:
+        available_drivers.remove_driver(driver.id)
+        driver.pre_search = False
     if driver.status != 'taking_a_break':
 
         # If there are available riders, match the driver with the closest rider
         if available_riders.is_not_empty():
-            closest_rider = available_riders.find_closest_rider(driver)
-            driver.picking_up(closest_rider, ec, t_now, rates)
-            available_riders.remove_rider(closest_rider.id)
-            log_and_print(f'Matched driver {driver.id} with rider {closest_rider.id}, rider location: {closest_rider.current_location}', rates['simulation']['name'])
+            closest_rider, cs_distance = available_riders.find_closest_rider(driver)
+            if (cs_distance < rates['maximum_match_range']['max_range']) or (not rates['simulation']['maximum_match_range']):
+                driver.picking_up(closest_rider, ec, t_now, rates)
+                available_riders.remove_rider(closest_rider.id)
+                log_and_print(f'Matched driver {driver.id} with rider {closest_rider.id}, rider location: {closest_rider.current_location}', rates['simulation']['name'])
+            else:
+                driver.status = 'idling'
+                driver.start_idling = t_now
+                available_drivers.add_driver(driver)
+                log_and_print('exceeds maximum matching range', rates['simulation']['name'])
+                if rates['simulation']['waiting_points']:
+                    driver.waiting_time = t_now
+                    closest_wp = Waiting_Points.find_closest_waiting_point(driver.current_location)
+                    if closest_wp:
+                        driver.travel_to_waiting_point(ec, t_now, closest_wp, rates)
+                        log_and_print(f'Driver {driver.id} is traveling to waiting point {closest_wp.name} at {t_now}, location: {closest_wp.corr}', rates['simulation']['name'])
+                        log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}', rates['simulation']['name'])
+
         # If there are no available riders, add the driver to the available drivers pool
         else:
             driver.status = 'idling'
@@ -102,7 +119,6 @@ def process_available_driver(driver, t_now, ec, available_riders, available_driv
                     driver.travel_to_waiting_point(ec, t_now, closest_wp, rates)
                     log_and_print(f'Driver {driver.id} is traveling to waiting point {closest_wp.name} at {t_now}, location: {closest_wp.corr}', rates['simulation']['name'])
                     log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}', rates['simulation']['name'])
-        drivers[driver.id] = driver
 
     else: log_and_print(f'Driver {driver.id} is taking a break at time {t_now}', rates['simulation']['name'])
 
@@ -186,6 +202,35 @@ if __name__ == "__main__":
 
                 process_available_driver(driver, t_now, ec, available_riders, available_drivers, rates)
 
+
+            elif event['type']['events'] == 'pre_search':
+                driver = drivers[event['data']['driver']]
+                # Only add if driver is still in the 'departing' phase (i.e. en-route drop-off)
+                if driver.status == 'departing':
+                    driver.pre_search = True
+                    # Actively check for waiting riders.
+                    if available_riders.is_not_empty():
+                        closest_rider, cs_distance = available_riders.find_closest_rider(driver)
+                        if (cs_distance >= rates['maximum_match_range']['max_range']) and rates['simulation']['maximum_match_range']:
+                            available_drivers.add_driver(driver)
+                            log_and_print("Maximum Distance Reach")
+                            log_and_print(f"Driver {driver.id} added to search pool via pre_search at time {t_now}", rates['simulation']['name'])
+                        else:
+                            driver.queue_picking_up(closest_rider, ec, t_now, rates)
+                            available_riders.remove_rider(closest_rider.id)
+                            log_and_print(f"Pre-search driver {driver.id} immediately matched with rider {closest_rider.id} at time {t_now}", rates['simulation']['name'])
+                    else:
+                        available_drivers.add_driver(driver)
+                        log_and_print(f"Driver {driver.id} added to search pool via pre_search at time {t_now}", rates['simulation']['name'])
+
+
+            elif event['type']['events'] == 'picking_up':
+                driver = drivers[event['data']['driver']]
+                rider = riders[event['data']['rider']]
+                driver.picking_up(rider, ec, t_now, rates)
+                log_and_print(f'Driver {driver.id} is picking up {rider.id}, rider location: {rider.current_location}', rates['simulation']['name'])
+
+
             # If the driver is departing
             elif event['type']['events'] == 'departing':
 
@@ -205,6 +250,7 @@ if __name__ == "__main__":
                 # Get the driver and rider objects
                 driver = drivers[event['data']['driver']]
                 rider = riders[event['data']['rider']]
+                
                 # Execute the dropping off method
                 driver.dropping_off(rider, ec, t_now, rates)
                 concurrent_riders = concurrent_riders - 1
@@ -251,12 +297,21 @@ if __name__ == "__main__":
                 # If there are available drivers, match the rider with the closest driver
                 if available_drivers.is_not_empty():
                     update_drivers_location(drivers, riders, t_now, rates, mode='finding_drivers')
-                    closest_driver = available_drivers.find_closest_driver(rider, t_now)
-                    if (t_now - closest_driver.start_idling) >= rates['drivers_break']['break_time']:
-                        closest_driver.cum_working = 0
-                    closest_driver.picking_up(rider, ec, t_now, rates)
-                    available_drivers.remove_driver(closest_driver.id)
-                    log_and_print(f'Matched driver {closest_driver.id} with rider {rider.id}, rider location: {rider.current_location}', rates['simulation']['name'])
+                    closest_driver, cs_distance = available_drivers.find_closest_driver(rider, t_now)
+                    if (cs_distance >= rates['maximum_match_range']['max_range']) and rates['simulation']['maximum_match_range']:
+                        available_riders.add_rider(rider)
+                        log_and_print("Maximum Distance Reach")
+                        log_and_print(f'Rider {rider.id} is waiting at {t_now}, location: {rider.current_location}', rates['simulation']['name'])
+                    else:
+                        available_drivers.remove_driver(closest_driver.id)
+                        if closest_driver.pre_search:
+                            log_and_print(f'Matched driver (pre-search) {closest_driver.id} with rider {rider.id}, rider location: {rider.current_location}', rates['simulation']['name'])
+                            closest_driver.queue_picking_up(rider, ec, t_now, rates)
+                        else:
+                            if (t_now - closest_driver.start_idling) >= rates['drivers_break']['break_time']:
+                                closest_driver.cum_working = 0
+                            closest_driver.picking_up(rider, ec, t_now, rates)
+                            log_and_print(f'Matched driver {closest_driver.id} with rider {rider.id}, rider location: {rider.current_location}', rates['simulation']['name'])
                 # If there are no available drivers, add the rider to the available riders pool
                 else:
                     available_riders.add_rider(rider)

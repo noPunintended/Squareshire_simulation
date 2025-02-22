@@ -18,13 +18,15 @@
     },
     'simulation': {
         'termination': 144000,
-        'name': 'drivers_break',
+        'name': 'pre_search',
         'n_snaps': 10,
         'waiting_points': False,
-        'search_while_dropping': False,
-        'drivers_break': True,
+        'search_while_dropping': True,
+        'drivers_break': False,
+        'maximum_match_range': False,
     },
-    'search_while_dropping': {'time_to_search': 5,},
+    'search_while_dropping': {'time_to_search': 30,},
     'drivers_break': {'jobs_time': 180,
-                      'break_time': 15}
+                      'break_time': 15},
+    'maximum_match_range': {max_range: 10}
     }
