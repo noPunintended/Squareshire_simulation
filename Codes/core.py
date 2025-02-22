@@ -213,7 +213,7 @@ if __name__ == "__main__":
                         closest_rider, cs_distance = available_riders.find_closest_rider(driver)
                         if (cs_distance >= rates['maximum_match_range']['max_range']) and rates['simulation']['maximum_match_range']:
                             available_drivers.add_driver(driver)
-                            log_and_print("Maximum Distance Reach")
+                            log_and_print("Maximum Distance Reach", rates['simulation']['name'])
                             log_and_print(f"Driver {driver.id} added to search pool via pre_search at time {t_now}", rates['simulation']['name'])
                         else:
                             driver.queue_picking_up(closest_rider, ec, t_now, rates)
@@ -300,7 +300,7 @@ if __name__ == "__main__":
                     closest_driver, cs_distance = available_drivers.find_closest_driver(rider, t_now)
                     if (cs_distance >= rates['maximum_match_range']['max_range']) and rates['simulation']['maximum_match_range']:
                         available_riders.add_rider(rider)
-                        log_and_print("Maximum Distance Reach")
+                        log_and_print("Maximum Distance Reach", rates['simulation']['name'])
                         log_and_print(f'Rider {rider.id} is waiting at {t_now}, location: {rider.current_location}', rates['simulation']['name'])
                     else:
                         available_drivers.remove_driver(closest_driver.id)
