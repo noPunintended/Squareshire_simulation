@@ -39,18 +39,27 @@ class Rider:
     def waiting_pick_up(self, rates):
 
         time = generate_random_value(rates['riders']['inter_arrival'])
-        corr = generate_random_value(rates['map_density'], size=2)
+        corr_x = generate_random_value(rates['map']['rider_origin_x'])
+        corr_y = generate_random_value(rates['map']['rider_origin_y'])
+        corr = np.array([corr_x, corr_y])
         return time, corr
 
     def create_destination(self, rates):
+        corr_x = generate_random_value(rates['map']['rider_destination_x'])
+        corr_y = generate_random_value(rates['map']['rider_destination_y'])
+        corr = np.array([corr_x, corr_y])
 
-        return generate_random_value(rates['map_density'], size=2)
+        return corr
 
     def generating_rider(self, ec, rates, time):
 
         n_time = generate_random_value(rates['riders']['inter_arrival'])
-        origin_corr = generate_random_value(rates['map']['density'], size=2)
-        dest_corr = generate_random_value(rates['map']['density'], size=2)
+        origin_corr_x = generate_random_value(rates['map']['rider_origin_x'])
+        origin_corr_y = generate_random_value(rates['map']['rider_origin_y'])
+        origin_corr = np.array([origin_corr_x, origin_corr_y])
+        dest_corr_x = generate_random_value(rates['map']['rider_destination_x'])
+        dest_corr_y = generate_random_value(rates['map']['rider_destination_y'])
+        dest_corr = np.array([dest_corr_x, dest_corr_y])
         patience_time = generate_random_value(rates['riders']['wait_time'])
 
         self.current_location = origin_corr
