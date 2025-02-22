@@ -1,18 +1,18 @@
 {
-    'map': {'driver_origin_x': ['uniform', 0, 20],
-            'driver_origin_y': ['uniform', 0, 20],
-            'rider_origin_x': ['uniform', 0, 20],
-            'rider_origin_y': ['uniform', 0, 20],
-            'rider_destination_x': ['uniform', 0, 20],
-            'rider_destination_y': ['uniform', 0, 20],
+    'map': {'driver_origin_x': ['beta', 1.920, 2.083, 0, 20],
+            'driver_origin_y': ['beta', 2.261, 1.766, 0, 20],
+            'rider_origin_x': ['beta', 1.355, 2.980, 0, 20],
+            'rider_origin_y': ['beta', 1.590, 2.312, 0, 20],
+            'rider_destination_x': ['beta', 1.596, 1.817, 0, 20],
+            'rider_destination_y': ['beta', 2.076, 1.575, 0, 20],
             },
     'drivers': {
-        'inter_arrival': ['exponential', 0.05],
-        'jobs_time': ['uniform', 300, 480],
+        'inter_arrival': ['exponential', 0.068],
+        'jobs_time': ['uniform', 360, 480],
         'petrol_cost': 0.2
     },
     'riders': {
-        'inter_arrival': ['exponential', 0.5],
+        'inter_arrival': ['exponential', 0.534],
         'wait_time': ['exponential', 0.083333333333],
         'initial_pay_rate': 3,
         'pay_rate': 2
@@ -23,7 +23,7 @@
     },
     'simulation': {
         'termination': 144000,
-        'name': 'defaults',
+        'name': 'real_dist',
         'n_snaps': 10,
         'waiting_points': False,
         'search_while_dropping': False,
