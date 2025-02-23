@@ -85,8 +85,9 @@ def process_available_driver(driver, t_now, ec, available_riders, available_driv
     if driver.pre_search:
         available_drivers.remove_driver(driver.id)
         driver.pre_search = False
+    if driver.at_searching_point:
+        available_drivers.remove_driver(driver.id)
     if driver.status != 'taking_a_break':
-
         # If there are available riders, match the driver with the closest rider
         if available_riders.is_not_empty():
             closest_rider, cs_distance = available_riders.find_closest_rider(driver)
@@ -100,12 +101,13 @@ def process_available_driver(driver, t_now, ec, available_riders, available_driv
                 available_drivers.add_driver(driver)
                 log_and_print('exceeds maximum matching range', rates['simulation']['name'])
                 if rates['simulation']['waiting_points']:
-                    driver.waiting_time = t_now
-                    closest_wp = Waiting_Points.find_closest_waiting_point(driver.current_location)
-                    if closest_wp:
-                        driver.travel_to_waiting_point(ec, t_now, closest_wp, rates)
-                        log_and_print(f'Driver {driver.id} is traveling to waiting point {closest_wp.name} at {t_now}, location: {closest_wp.corr}', rates['simulation']['name'])
-                        log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}', rates['simulation']['name'])
+                    if not driver.at_searching_point:
+                        driver.waiting_time = t_now
+                        closest_wp = Waiting_Points.find_closest_waiting_point(driver.current_location)
+                        if closest_wp:
+                            driver.travel_to_waiting_point(ec, t_now, closest_wp, rates)
+                            log_and_print(f'Driver {driver.id} is traveling to waiting point {closest_wp.name} at {t_now}, location: {closest_wp.corr}', rates['simulation']['name'])
+                            log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}', rates['simulation']['name'])
 
         # If there are no available riders, add the driver to the available drivers pool
         else:
@@ -113,12 +115,13 @@ def process_available_driver(driver, t_now, ec, available_riders, available_driv
             driver.start_idling = t_now
             available_drivers.add_driver(driver)
             if rates['simulation']['waiting_points']:
-                driver.waiting_time = t_now
-                closest_wp = Waiting_Points.find_closest_waiting_point(driver.current_location)
-                if closest_wp:
-                    driver.travel_to_waiting_point(ec, t_now, closest_wp, rates)
-                    log_and_print(f'Driver {driver.id} is traveling to waiting point {closest_wp.name} at {t_now}, location: {closest_wp.corr}', rates['simulation']['name'])
-                    log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}', rates['simulation']['name'])
+                if not driver.at_searching_point:
+                    driver.waiting_time = t_now
+                    closest_wp = Waiting_Points.find_closest_waiting_point(driver.current_location)
+                    if closest_wp:
+                        driver.travel_to_waiting_point(ec, t_now, closest_wp, rates)
+                        log_and_print(f'Driver {driver.id} is traveling to waiting point {closest_wp.name} at {t_now}, location: {closest_wp.corr}', rates['simulation']['name'])
+                        log_and_print(f'Driver {driver.id} is idling at {t_now}, location: {driver.current_location}', rates['simulation']['name'])
 
     else: log_and_print(f'Driver {driver.id} is taking a break at time {t_now}', rates['simulation']['name'])
 
@@ -250,7 +253,7 @@ if __name__ == "__main__":
                 # Get the driver and rider objects
                 driver = drivers[event['data']['driver']]
                 rider = riders[event['data']['rider']]
-                
+
                 # Execute the dropping off method
                 driver.dropping_off(rider, ec, t_now, rates)
                 concurrent_riders = concurrent_riders - 1
@@ -262,7 +265,7 @@ if __name__ == "__main__":
 
             elif event['type']['events'] == 'idling':
                 driver = drivers[event['data']['driver']]
-                driver.idling(rates)
+                driver.idling(ec, t_now, rates)
 
 
             # If the driver is going offline
@@ -272,6 +275,8 @@ if __name__ == "__main__":
                 if driver.status == 'traveling_to_waiting_points':
                     driver.interupting_trip(t_now, rates)
                 if driver.status == 'idling' or driver.status == 'taking_a_break' or driver.going_offline:
+                    if driver.status == 'idling':
+                        available_drivers.remove_driver(driver.id)
                     driver.status = 'offline'
                     driver.going_offline = True
                     driver.actual_offline_time = t_now

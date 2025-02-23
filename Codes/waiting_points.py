@@ -7,19 +7,19 @@ class Waiting_Points:
     corr: tuple[float, float]
 
     # Class variable to store predefined waiting points
-    # waiting_points = [
-    #     {"name": "WP1", "corr": (15, 15)},
-    #     {"name": "WP2", "corr": (15, 5)},
-    #     {"name": "WP3", "corr": (5, 15)},
-    #     {"name": "WP3", "corr": (5, 5)},
-    # ]
-
     waiting_points = [
-        {"name": "WP1", "corr": (3.702, 4.448)},
-        {"name": "WP2", "corr": (2.978, 11.641)},
-        {"name": "WP3", "corr": (10.505, 6.342)},
-        {"name": "WP3", "corr": (8.732, 14.030)},
+        {"name": "WP1", "corr": (15, 15)},
+        {"name": "WP2", "corr": (15, 5)},
+        {"name": "WP3", "corr": (5, 15)},
+        {"name": "WP3", "corr": (5, 5)},
     ]
+
+    # waiting_points = [
+    #     {"name": "WP1", "corr": (3.702, 4.448)},
+    #     {"name": "WP2", "corr": (2.978, 11.641)},
+    #     {"name": "WP3", "corr": (10.505, 6.342)},
+    #     {"name": "WP3", "corr": (8.732, 14.030)},
+    # ]
 
 
     @classmethod

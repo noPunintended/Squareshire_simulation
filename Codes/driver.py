@@ -22,6 +22,7 @@ class Driver:
     earnings: float = 0.0
     current_trip: dict = None
     going_offline: bool = False
+    at_searching_point: bool = False
     number_of_trips: int = 0
     fuel_cost: float = 0.0
     start_idling: float = 0.0
@@ -73,6 +74,7 @@ class Driver:
         ### Matched while traveling to waiting points 
         if self.status == 'traveling_to_waiting_points':
             self.interupting_trip(time, rates)
+        self.at_searching_point = False
         distance, expected_travel_time, actual_travel_time, travel_rates = calculate_travel(
             self.current_location[0], self.current_location[1], rider.origin[0], rider.origin[1], rates)
         self.current_trip = {
@@ -199,7 +201,7 @@ class Driver:
             'type': 'driver', 'events': 'idling'}, {'driver': self.id})
 
 
-    def idling(self, rates):
+    def idling(self, ec, time, rates):
         if self.status == 'traveling_to_waiting_points':
             self.current_location = self.current_trip['destination']
             self.fuel_cost += self.current_trip['distance'] * rates['drivers']['petrol_cost']
@@ -210,6 +212,10 @@ class Driver:
             self.status = 'idling'
             self.cum_working = self.cum_working + self.current_trip['actual_travel_time']
             self.current_trip = {}
+            self.at_searching_point = True
+            if (not self.going_offline) and (not self.pre_match):
+                ec.add_event(time, {
+                    'type': 'driver', 'events': 'searching_for_rider'}, {'driver': self.id})
 
 
     def interupting_trip(self, time, rates):
