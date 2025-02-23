@@ -91,7 +91,7 @@ def return_current_pos(origin_x, origin_y, destination_x, destination_y, actual_
     dist_y_traveled = current_trip_time * avg_speed_y
     current_x = origin_x + dist_x_traveled
     current_y = origin_y + dist_y_traveled
-    return current_x, current_y, dist_x_traveled, dist_x_traveled
+    return current_x, current_y, dist_x_traveled, dist_y_traveled, current_trip_time
 
 
 def update_drivers_location(drivers, riders, t_now, rates, mode='termination'):
@@ -127,7 +127,7 @@ def update_drivers_location(drivers, riders, t_now, rates, mode='termination'):
     departure_time = np.array(driver_data["departure_time"]).reshape(-1) 
 
     # Compute the current positions and distances
-    current_x, current_y, dist_x, dist_y = return_current_pos(
+    current_x, current_y, dist_x, dist_y, current_trip_time = return_current_pos(
         origin_x, origin_y, destination_x, destination_y, travel_time, departure_time, t_now
     )
     
@@ -140,6 +140,8 @@ def update_drivers_location(drivers, riders, t_now, rates, mode='termination'):
         if mode == 'termination':
             driver.total_distance += distances[i]
             driver.fuel_cost += distances[i] * rates['drivers']['petrol_cost']
-        riders[driver.current_trip['matched_rider']].current_location = driver.current_location
+            driver.total_time += current_trip_time[i]
+        if driver.status != 'traveling_to_waiting_points':
+            riders[driver.current_trip['matched_rider']].current_location = driver.current_location
 
     return None

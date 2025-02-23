@@ -322,6 +322,7 @@ if __name__ == "__main__":
             elif event['type']['events'] == 'cancel':
                 rider = riders[event['data']['rider']]
                 if rider.status == 'waiting':
+                    rider.offline_time = t_now
                     rider.status = 'abandoned'
                     concurrent_riders = concurrent_riders - 1
                     riders[rider.id] = rider

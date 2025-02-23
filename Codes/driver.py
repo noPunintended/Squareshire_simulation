@@ -170,6 +170,7 @@ class Driver:
         self.current_trip = {}
         self.status = 'dropping_off'
         rider.status = 'reached_destination'
+        rider.offline_time = time
         if (not self.going_offline) and (not self.pre_match):
             ec.add_event(time, {
                 'type': 'driver', 'events': 'searching_for_rider'}, {'driver': self.id})

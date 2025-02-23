@@ -19,6 +19,7 @@ class Rider:
     driver: str = None
     pick_up_time: float = np.inf
     destination_time: float = np.inf
+    offline_time: float = np.inf
 
     @classmethod
     def from_dataset(cls, row):
