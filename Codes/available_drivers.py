@@ -44,7 +44,7 @@ class AvailableDrivers:
         adjusted_distances = []
         for i, driver in enumerate(self.drivers.values()):
             if driver.waiting_time > 0:
-                adjustment = ((driver.waiting_time + 1e-9)) * epsilon  # Add a small constant
+                adjustment = (1/(driver.waiting_time + 1e-9)) * epsilon  # Add a small constant
             else:
                 adjustment = 0  # Avoid division by zero
             adjusted_distances.append(distances[i] + adjustment)
