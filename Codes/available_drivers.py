@@ -29,43 +29,27 @@ class AvailableDrivers:
 
     def find_closest_driver(self, rider, t_now, epsilon=1e-6):
         """Finds the closest driver using Euclidean distance.
-        If a driver is flagged as pre_search (i.e. near drop-off), the effective distance is computed as:
-          remaining drop-off distance + distance from drop-off destination to rider.
         Breaks ties by slightly adjusting distance with (1 / waiting_time) * epsilon.
         """
         if not self.drivers:
             return None
 
-        driver_ids = list(self.drivers.keys())
-        adjusted_distances = []
-        
-        # Iterate over each available driver to compute an effective distance
-        for driver in self.drivers.values():
-            if hasattr(driver, 'pre_search') and driver.pre_search and driver.current_trip:
-                # Calculate the remaining drop-off distance
-                remaining_distance = calculate_distance(
-                    driver.current_location[0], driver.current_location[1],
-                    driver.current_trip['destination'][0], driver.current_trip['destination'][1]
-                )
-                # Calculate the pickup distance from drop-off destination to the rider
-                pickup_distance = calculate_distance(
-                    driver.current_trip['destination'][0], driver.current_trip['destination'][1],
-                    rider.current_location[0], rider.current_location[1]
-                )
-                effective_distance = remaining_distance + pickup_distance
-            else:
-                effective_distance = calculate_distance(
-                    rider.current_location[0], rider.current_location[1],
-                    driver.current_location[0], driver.current_location[1]
-                )
-            
-            # Adjust the effective distance based on the driver's waiting_time
-            if driver.waiting_time > 0:
-                adjustment = (1 / (driver.waiting_time + 1e-9)) * epsilon
-            else:
-                adjustment = 0
-            adjusted_distances.append(effective_distance + adjustment)
+        driver_ids, driver_x, driver_y = self.get_all_driver_locations()
+        rider_x, rider_y = rider.current_location
 
-        # Find and return the driver with the minimum adjusted distance
+        # Calculate distances
+        distances = calculate_distance(rider_x, rider_y, driver_x, driver_y)
+
+        # Adjust distances with a very small value based on (1 / waiting_time)
+        adjusted_distances = []
+        for i, driver in enumerate(self.drivers.values()):
+            if driver.waiting_time > 0:
+                adjustment = ((driver.waiting_time + 1e-9)) * epsilon  # Add a small constant
+            else:
+                adjustment = 0  # Avoid division by zero
+            adjusted_distances.append(distances[i] + adjustment)
+
+        # Find the driver with the minimum adjusted distance
         closest_index = np.argmin(adjusted_distances)
-        return self.drivers[driver_ids[closest_index]], adjusted_distances[closest_index]
+
+        return self.drivers[driver_ids[closest_index]], adjusted_distances[closest_index] # Return driver object

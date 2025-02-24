@@ -22,11 +22,8 @@ class Driver:
     earnings: float = 0.0
     current_trip: dict = None
     going_offline: bool = False
-    at_searching_point: bool = False
     number_of_trips: int = 0
     fuel_cost: float = 0.0
-    start_idling: float = 0.0
-    cum_working: float = 0.0
     total_pickup_distance: float = 0.0
     total_idling_distance: float = 0.0
     total_dropoff_distance: float = 0.0
@@ -40,8 +37,6 @@ class Driver:
     past_fares: list = field(default_factory=list)
     past_riders: list = field(default_factory=list)
     past_locations: list = field(default_factory=list)
-    pre_search: bool = False
-    pre_match: bool = False
 
     @classmethod
     def from_dataset(cls, row):
@@ -55,26 +50,25 @@ class Driver:
         )
 
     def generating_driver(self, rates, time):
-        n_time = generate_random_value(rates['drivers']['inter_arrival']) #what values would it generate? Assuming size is 1
-        corr_x = generate_random_value(rates['map']['driver_origin_x'])
-        corr_y = generate_random_value(rates['map']['driver_origin_y'])
-        corr = np.array([corr_x, corr_y])
-        jobs_time = generate_random_value(rates['drivers']['jobs_time']) #is this the maximum time we can work for?
+            n_time = generate_random_value(rates['drivers']['inter_arrival']) #what values would it generate? Assuming size is 1
+            corr_x = generate_random_value(rates['map']['driver_origin_x'])
+            corr_y = generate_random_value(rates['map']['driver_origin_y'])
+            corr = np.array([corr_x, corr_y])
+            jobs_time = generate_random_value(rates['drivers']['jobs_time']) #is this the maximum time we can work for?
 
-        self.current_location = corr
-        self.origin = corr
-        self.offline_time = time + jobs_time
-        self.past_locations.append(corr)
-        self.cum_working = 0
-        #include the total time a single driver would be generated? 
-        return time + n_time
+            self.current_location = corr
+            self.origin = corr
+            self.offline_time = time + jobs_time
+            self.past_locations.append(corr)
+            self.cum_working = 0
+            #include the total time a single driver would be generated? 
+            return time + n_time
 
     def picking_up(self, rider, ec, time, rates):
         
         ### Matched while traveling to waiting points 
         if self.status == 'traveling_to_waiting_points':
             self.interupting_trip(time, rates)
-        self.at_searching_point = False
         distance, expected_travel_time, actual_travel_time, travel_rates = calculate_travel(
             self.current_location[0], self.current_location[1], rider.origin[0], rider.origin[1], rates)
         self.current_trip = {
@@ -91,27 +85,14 @@ class Driver:
         self.status = 'picking_up'
         self.past_riders.append(rider.id)
         self.waiting_time = 0
-        if rider.status != 'matched':
-            rider.wait_till_match = time - rider.become_available
-            rider.status = 'matched'
-
+        rider.status = 'matched'
         rider.driver = self.id
+        rider.wait_till_match = time - rider.become_available
         ec.add_event(time + actual_travel_time, {
             'type': 'driver', 'events': 'departing'}, {'driver': self.id, 'rider': rider.id})
         return None
-    
-
-    def queue_picking_up(self, rider, ec, time, rates):
-        self.pre_match = True
-        self.pre_search = False
-        rider.status = 'matched'
-        rider.wait_till_match = time - rider.become_available
-        ec.add_event(self.current_trip['time_arrival'], {
-            'type': 'driver', 'events': 'picking_up'}, {'driver': self.id, 'rider': rider.id})
-
 
     def departing(self, rider, ec, time, rates):
-        self.pre_match = False
         self.current_location = self.current_trip['destination']
         self.fuel_cost += self.current_trip['distance'] * rates['drivers']['petrol_cost']
         self.total_pickup_distance += self.current_trip['distance']
@@ -120,7 +101,6 @@ class Driver:
         self.total_time += self.current_trip['actual_travel_time']
         self.past_pickup.append((self.current_trip['origin'], self.current_trip['destination']))
         self.past_locations.append(self.current_location)
-        self.cum_working = self.cum_working + self.current_trip['actual_travel_time']
         distance, expected_travel_time, actual_travel_time, travel_rates = calculate_travel(
             self.current_location[0], self.current_location[1], rider.destination[0], rider.destination[1], rates)
         self.current_trip = {
@@ -142,19 +122,6 @@ class Driver:
         ec.add_event(time + actual_travel_time, {
             'type': 'driver', 'events': 'dropping_off'}, {'driver': self.id, 'rider': rider.id})
         self.number_of_trips += 1
-
-        ## If goint to break
-        if rates['simulation']['drivers_break']:
-            if self.cum_working >= rates['drivers_break']['jobs_time']:
-                return None
-
-        offline_soon = self.offline_time < self.current_trip['time_arrival']
-        if rates['simulation']['search_while_dropping']:
-            threshold = rates['search_while_dropping']['time_to_search']
-            if (actual_travel_time  > threshold) and (not self.going_offline) and (not offline_soon):
-                ## This should be expected travel time but actual implementation would took too long
-                pre_search_time = time + actual_travel_time  - threshold
-                ec.add_event(pre_search_time, {'type': 'driver', 'events': 'pre_search'}, {'driver': self.id})
         return None
 
     def dropping_off(self, rider, ec, time, rates):
@@ -168,12 +135,11 @@ class Driver:
         self.past_locations.append(self.current_location)
         self.earnings += self.current_trip['fare']
         self.past_fares.append(self.current_trip['fare'])
-        self.cum_working = self.cum_working + self.current_trip['actual_travel_time']
         self.current_trip = {}
         self.status = 'dropping_off'
         rider.status = 'reached_destination'
         rider.offline_time = time
-        if (not self.going_offline) and (not self.pre_match):
+        if not self.going_offline:
             ec.add_event(time, {
                 'type': 'driver', 'events': 'searching_for_rider'}, {'driver': self.id})
         rider.destination_time = time
@@ -201,7 +167,7 @@ class Driver:
             'type': 'driver', 'events': 'idling'}, {'driver': self.id})
 
 
-    def idling(self, ec, time, rates):
+    def idling(self, rates):
         if self.status == 'traveling_to_waiting_points':
             self.current_location = self.current_trip['destination']
             self.fuel_cost += self.current_trip['distance'] * rates['drivers']['petrol_cost']
@@ -210,12 +176,7 @@ class Driver:
             self.total_waiting_point_travel_time += self.current_trip['actual_travel_time']
             self.total_time += self.current_trip['actual_travel_time']
             self.status = 'idling'
-            self.cum_working = self.cum_working + self.current_trip['actual_travel_time']
             self.current_trip = {}
-            self.at_searching_point = True
-            if (not self.going_offline) and (not self.pre_match):
-                ec.add_event(time, {
-                    'type': 'driver', 'events': 'searching_for_rider'}, {'driver': self.id})
 
 
     def interupting_trip(self, time, rates):
@@ -244,29 +205,11 @@ class Driver:
         self.total_waiting_point_travel_time += current_trip_time
         self.total_time += current_trip_time
         self.status = 'idling'
-        self.cum_working = self.cum_working + current_trip_time
         self.current_trip = {}
 
-
-    def searching_for_rider(self, ec, time, rates): #we start this when driver becomes available no?
+    def searching_for_rider(self, ec, time): #we start this when driver becomes available no?
         self.status = 'searching_for_rider'
-        ## Check if need resting
-        if rates['simulation']['drivers_break']:
-            if self.cum_working >= rates['drivers_break']['jobs_time']:
-                self.taking_a_break(ec, time, rates)
-
         return None
-    
-
-    def taking_a_break(self, ec, time, rates):
-        self.status = 'taking_a_break'
-        self.cum_working = 0
-        self.start_idling = 0
-        ec.add_event(time + rates['drivers_break']['break_time'], {
-            'type': 'driver', 'events': 'searching_for_rider'}, {'driver': self.id})
-        
-        return None
-
 
     def stop_working(self):
         self.status = 'OFFLINE'
