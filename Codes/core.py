@@ -240,7 +240,7 @@ if __name__ == "__main__":
                 # Check if the driver is idling or dropping off
                 if driver.status == 'traveling_to_waiting_points':
                     driver.interupting_trip(t_now, rates)
-                if driver.status == 'idling' or driver.going_offline:
+                if driver.status == 'idling' or (driver.going_offline and driver.status == 'dropping_off'):
                     driver.status = 'offline'
                     driver.going_offline = True
                     driver.actual_offline_time = t_now
